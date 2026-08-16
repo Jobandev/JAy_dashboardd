@@ -1,4 +1,4 @@
-import { addDoc, collection, doc, getDocs, onSnapshot, setDoc, writeBatch } from 'firebase/firestore'
+import { addDoc, collection, doc, getDocs, onSnapshot, setDoc, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { assets, clients, projects } from '../data/portalData'
 import { db } from './firebase'
 
@@ -23,4 +23,8 @@ export function subscribeToCollection(name, onChange) {
 
 export function createClient(client) {
   return addDoc(collection(db, collections.clients), { ...client, status: 'Active', projects: 0, lastActivity: 'Just now' })
+}
+
+export function createContentLink(content) {
+  return addDoc(collection(db, collections.assets), { ...content, date: 'Just now', createdAt: serverTimestamp() })
 }
