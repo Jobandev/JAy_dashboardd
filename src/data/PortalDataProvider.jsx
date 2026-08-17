@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { isFirebaseConfigured } from '../firebase/firebase'
-import { clearDemoData, createClient, createContentLink, seedPortalData, subscribeToCollection } from '../firebase/portalService'
+import { clearDemoData, createClient, createContentLink, createProject, seedPortalData, subscribeToCollection } from '../firebase/portalService'
 
 const PortalDataContext = createContext({ clients: [], projects: [], assets: [], loading: true, addClient: async () => {}, addContentLink: async () => {} })
 
@@ -35,7 +35,7 @@ export function PortalDataProvider({ children }) {
     return () => { active = false; stopClients(); stopProjects(); stopAssets() }
   }, [user])
 
-  const value = useMemo(() => ({ clients, projects, assets, loading, addClient: createClient, addContentLink: createContentLink, clearDemoData }), [clients, projects, assets, loading])
+  const value = useMemo(() => ({ clients, projects, assets, loading, addClient: createClient, addContentLink: createContentLink, addProject: createProject, clearDemoData }), [clients, projects, assets, loading])
   return <PortalDataContext.Provider value={value}>{children}</PortalDataContext.Provider>
 }
 

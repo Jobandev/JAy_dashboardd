@@ -886,7 +886,8 @@ function AddContentLink({ clients, close }) {
   );
 }
 function Projects() {
-  const { projects } = usePortalData();
+  const { projects, clients } = usePortalData();
+  const [showCreate, setShowCreate] = useState(false);
   return (
     <Shell>
       <section className="page">
@@ -895,7 +896,7 @@ function Projects() {
           title="Projects"
           description="Track progress from first idea to final delivery."
         >
-          <PrimaryButton>New project</PrimaryButton>
+          <PrimaryButton onClick={() => setShowCreate(true)}>New project</PrimaryButton>
         </PageHeader>
         <section className="panel projects-panel">
           {projects.map((p) => (
@@ -903,8 +904,37 @@ function Projects() {
           ))}
         </section>
       </section>
+      {showCreate && <AddProject clients={clients} close={() => setShowCreate(false)} />}
     </Shell>
   );
+}
+function AddProject({ clients, close }) {
+  const { addProject } = usePortalData();
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const submit = async (event) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const client = clients.find((item) => item.id === form.get("clientId"));
+    if (!client) { setError("Choose a client."); return; }
+    setSaving(true); setError("");
+    try {
+      await addProject({ name: form.get("name"), client: client.name, status: form.get("status"), due: form.get("due") || "No due date" });
+      close();
+    } catch (err) {
+      console.error(err); setError("Unable to create the project. Please try again.");
+    } finally { setSaving(false); }
+  };
+  return <div className="modal-backdrop"><form className="modal upload-modal" onSubmit={submit}>
+    <button type="button" className="modal-close" onClick={close}><X size={18}/></button>
+    <p className="eyebrow">PRODUCTION PIPELINE</p><h2>New project</h2><p className="description">Create a project and assign it to a client.</p>
+    <label>Project name<input name="name" required placeholder="e.g. Autumn campaign"/></label>
+    <label>Client<select name="clientId" required defaultValue=""><option value="" disabled>Select a client</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}</select></label>
+    <label>Status<select name="status" defaultValue="Pre-production"><option>Pre-production</option><option>In production</option><option>Review</option></select></label>
+    <label>Due date<input name="due" type="date"/></label>
+    {error && <p className="form-error">{error}</p>}
+    <div className="modal-actions"><button type="button" className="secondary-button" onClick={close}>Cancel</button><PrimaryButton icon={Plus}>{saving ? "Creating…" : "Create project"}</PrimaryButton></div>
+  </form></div>;
 }
 function SettingsPage() {
   const { user } = useAuth();

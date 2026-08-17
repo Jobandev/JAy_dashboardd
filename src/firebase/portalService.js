@@ -40,3 +40,7 @@ export function createClient(client) {
 export function createContentLink(content) {
   return addDoc(collection(db, collections.assets), { ...content, date: 'Just now', createdAt: serverTimestamp() })
 }
+
+export function createProject(project) {
+  return addDoc(collection(db, collections.projects), { ...project, progress: 0, createdAt: serverTimestamp() })
+}
