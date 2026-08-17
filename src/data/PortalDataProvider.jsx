@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { isFirebaseConfigured } from '../firebase/firebase'
-import { clearDemoData, createClient, createContentLink, createProject, seedPortalData, subscribeToCollection } from '../firebase/portalService'
+import { clearDemoData, createClient, updateClient, updateProject, createContentLink, createProject, createActivity, seedPortalData, subscribeToCollection } from '../firebase/portalService'
 
 const PortalDataContext = createContext({ clients: [], projects: [], assets: [], loading: true, addClient: async () => {}, addContentLink: async () => {} })
 
@@ -10,6 +10,7 @@ export function PortalDataProvider({ children }) {
   const [clients, setClients] = useState([])
   const [projects, setProjects] = useState([])
   const [assets, setAssets] = useState([])
+  const [activities, setActivities] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -32,10 +33,11 @@ export function PortalDataProvider({ children }) {
     const stopClients = subscribeToCollection('clients', setClients)
     const stopProjects = subscribeToCollection('projects', setProjects)
     const stopAssets = subscribeToCollection('assets', setAssets)
-    return () => { active = false; stopClients(); stopProjects(); stopAssets() }
+    const stopActivities = subscribeToCollection('activities', setActivities)
+    return () => { active = false; stopClients(); stopProjects(); stopAssets(); stopActivities() }
   }, [user])
 
-  const value = useMemo(() => ({ clients, projects, assets, loading, addClient: createClient, addContentLink: createContentLink, addProject: createProject, clearDemoData }), [clients, projects, assets, loading])
+  const value = useMemo(() => ({ clients, projects, assets, activities, loading, addClient: createClient, updateClient: updateClient, updateProject: updateProject, addContentLink: createContentLink, addProject: createProject, addActivity: createActivity, clearDemoData }), [clients, projects, assets, activities, loading])
   return <PortalDataContext.Provider value={value}>{children}</PortalDataContext.Provider>
 }
 

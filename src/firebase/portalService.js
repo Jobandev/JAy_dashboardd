@@ -1,8 +1,8 @@
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, setDoc, serverTimestamp, writeBatch } from 'firebase/firestore'
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, setDoc, updateDoc, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { assets, clients, projects } from '../data/portalData'
 import { db } from './firebase'
 
-const collections = { clients: 'clients', projects: 'projects', assets: 'content' }
+const collections = { clients: 'clients', projects: 'projects', assets: 'content', activities: 'activities' }
 
 export async function seedPortalData() {
   const metaRef = doc(db, 'portalMeta', 'seed')
@@ -37,10 +37,24 @@ export function createClient(client) {
   return addDoc(collection(db, collections.clients), { ...client, status: 'Active', projects: 0, lastActivity: 'Just now' })
 }
 
+export function updateClient(id, updates) {
+  // updates should be an object with the fields to update on the client document
+  return updateDoc(doc(db, collections.clients, id), updates)
+}
+
+export function updateProject(id, updates) {
+  // updates should be an object with the fields to update on the project document
+  return updateDoc(doc(db, collections.projects, id), updates)
+}
+
 export function createContentLink(content) {
   return addDoc(collection(db, collections.assets), { ...content, date: 'Just now', createdAt: serverTimestamp() })
 }
 
 export function createProject(project) {
   return addDoc(collection(db, collections.projects), { ...project, progress: 0, createdAt: serverTimestamp() })
+}
+
+export function createActivity(activity) {
+  return addDoc(collection(db, collections.activities), { ...activity, createdAt: serverTimestamp() })
 }

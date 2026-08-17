@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   NavLink,
   Navigate,
@@ -44,9 +44,13 @@ const nav = [
 ];
 const typeIcon = { Video: Play, Photo: Film, Document: FileText };
 
+// Simple toast context to allow components to show brief notifications
+const ToastContext = React.createContext(null);
+
 function Shell({ children }) {
   const [open, setOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [toast, setToast] = useState(null);
   const location = useLocation();
   const { user } = useAuth();
   const name = user?.displayName || user?.email?.split("@")[0] || "Portal user";
@@ -56,86 +60,102 @@ function Shell({ children }) {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+
+  const showToast = (message, type = "info") => {
+    setToast({ message, type });
+    // auto-dismiss
+    setTimeout(() => setToast(null), 3000);
+  };
+
   return (
-    <div className="app-shell">
-      <aside className={open ? "sidebar is-open" : "sidebar"}>
-        <div className="brand">
-          <span className="brand-mark">W</span>
-          <span>WOLFGRAMM</span>
-          <button className="mobile-close" onClick={() => setOpen(false)}>
-            <X size={18} />
-          </button>
-        </div>
-        <nav>
-          {nav.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                isActive ||
-                (to === "/clients" && location.pathname.startsWith("/clients"))
-                  ? "nav-link active"
-                  : "nav-link"
-              }
-              onClick={() => setOpen(false)}
-            >
-              <Icon size={18} />
-              {label}
-            </NavLink>
-          ))}
-        </nav>
-        <div className="sidebar-bottom">
-          <NavLink to="/settings" className="nav-link">
-            <Settings size={18} />
-            Settings
-          </NavLink>
-          <div className="profile">
-            <span className="avatar small">{initials}</span>
-            <div>
-              <b>{name}</b>
-              <span>{user?.email}</span>
-            </div>
+    <ToastContext.Provider value={{ showToast }}>
+      <div className="app-shell">
+        <aside className={open ? "sidebar is-open" : "sidebar"}>
+          <div className="brand">
+            <span className="brand-mark">W</span>
+            <span>WOLFGRAMM</span>
+            <button className="mobile-close" onClick={() => setOpen(false)}>
+              <X size={18} />
+            </button>
           </div>
-        </div>
-      </aside>
-      <main>
-        <header className="topbar">
-          <button className="menu-button" onClick={() => setOpen(true)}>
-            <Menu />
-          </button>
-          <div className="crumb">
-            Workspace <ChevronRight size={14} /> <span>Wolfgramm Holdings</span>
-          </div>
-          <div className="top-actions">
-            <div className="notification-wrap">
-              <button
-                className="icon-button"
-                onClick={() => setShowNotifications(!showNotifications)}
-                aria-label="Notifications"
+          <nav>
+            {nav.map(({ to, label, icon: Icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) =>
+                  isActive ||
+                  (to === "/clients" && location.pathname.startsWith("/clients"))
+                    ? "nav-link active"
+                    : "nav-link"
+                }
+                onClick={() => setOpen(false)}
               >
-                <Bell size={19} />
-                <i />
-              </button>
-              {showNotifications && (
-                <div className="notification-panel">
-                  <b>Notifications</b>
-                  <p>
-                    <span />
-                    Content library is ready for new delivery links.
-                  </p>
-                  <p>
-                    <span />
-                    Your Firestore changes save automatically.
-                  </p>
-                </div>
-              )}
+                <Icon size={18} />
+                {label}
+              </NavLink>
+            ))}
+          </nav>
+          <div className="sidebar-bottom">
+            <NavLink to="/settings" className="nav-link">
+              <Settings size={18} />
+              Settings
+            </NavLink>
+            <div className="profile">
+              <span className="avatar small">{initials}</span>
+              <div>
+                <b>{name}</b>
+                <span>{user?.email}</span>
+              </div>
             </div>
-            <span className="avatar">{initials}</span>
           </div>
-        </header>
-        {children}
-      </main>
-    </div>
+        </aside>
+        <main>
+          <header className="topbar">
+            <button className="menu-button" onClick={() => setOpen(true)}>
+              <Menu />
+            </button>
+            <div className="crumb">
+              Workspace <ChevronRight size={14} /> <span>Wolfgramm Holdings</span>
+            </div>
+            <div className="top-actions">
+              <div className="notification-wrap">
+                <button
+                  className="icon-button"
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  aria-label="Notifications"
+                >
+                  <Bell size={19} />
+                  <i />
+                </button>
+                {showNotifications && (
+                  <div className="notification-panel">
+                    <b>Notifications</b>
+                    <p>
+                      <span />
+                      Content library is ready for new delivery links.
+                    </p>
+                    <p>
+                      <span />
+                      Your Firestore changes save automatically.
+                    </p>
+                  </div>
+                )}
+              </div>
+              <span className="avatar">{initials}</span>
+            </div>
+          </header>
+
+          {children}
+
+          {toast && (
+            <div className={`toast ${toast.type}`} style={{ position: 'fixed', right: 20, bottom: 20, zIndex: 60 }}>
+              {toast.message}
+            </div>
+          )}
+        </main>
+      </div>
+    </ToastContext.Provider>
   );
 }
 
@@ -253,9 +273,10 @@ function AssetCard({ asset, compact = false }) {
 }
 
 function Dashboard() {
-  const { clients, assets, projects } = usePortalData();
+  const { clients, assets, projects, activities, addActivity } = usePortalData();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [showAddActivity, setShowAddActivity] = useState(false);
   const displayName = user?.displayName || user?.email?.split("@")[0] || "there";
   return (
     <Shell>
@@ -306,31 +327,38 @@ function Dashboard() {
               ))}
             </div>
           </section>
+
           <section className="panel activity">
             <div className="panel-title">
               <div>
                 <p className="eyebrow">ACTIVITY</p>
                 <h2>What needs attention</h2>
               </div>
-              <button className="icon-button">
-                <MoreHorizontal size={19} />
-              </button>
+              <div className="heading-action">
+                <PrimaryButton onClick={() => setShowAddActivity(true)}>Add note</PrimaryButton>
+              </div>
             </div>
-            <Activity
-              color="gold"
-              title="Summer campaign is ready for review"
-              detail="ABC Media · 24 minutes ago"
-            />
-            <Activity
-              color="blue"
-              title="New files added to Brand Film 2026"
-              detail="Pacific Creative · 2 hours ago"
-            />
-            <Activity
-              color="purple"
-              title="Project timeline updated"
-              detail="Northstar Events · Yesterday"
-            />
+            <div className="activity-list">
+              {activities && activities.length ? (
+                activities
+                  .slice()
+                  .sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
+                  .map((act) => (
+                    <article key={act.id} className="activity-item">
+                      <span className="dot purple" />
+                      <div>
+                        <b>{act.title || 'Note'}</b>
+                        <p className="muted">{act.message}</p>
+                        <p className="muted small">{act.author || act.by} · {act.createdAt ? new Date((act.createdAt.seconds||0)*1000).toLocaleString() : ''}</p>
+                      </div>
+                    </article>
+                  ))
+              ) : (
+                <div className="empty-activity">
+                  <p className="description">No activity yet. Add a note for your team.</p>
+                </div>
+              )}
+            </div>
           </section>
         </div>
         <section className="panel projects-panel">
@@ -347,6 +375,7 @@ function Dashboard() {
             <ProjectRow key={p.id || p.name} project={p} />
           ))}
         </section>
+      {showAddActivity && <AddActivity projects={projects} addActivity={addActivity} close={() => setShowAddActivity(false)} user={user} />}
       </section>
     </Shell>
   );
@@ -365,7 +394,34 @@ function Stat({ icon: Icon, label, value, change }) {
     </div>
   );
 }
-function Activity({ color, title, detail }) {
+function Activity({ color, title, detail, project }) {
+  const { clients, updateProject } = usePortalData();
+  const [openMenu, setOpenMenu] = useState(false);
+  const [showQuick, setShowQuick] = useState(false);
+  const [quickProgress, setQuickProgress] = useState(project?.progress || 0);
+  const [showEdit, setShowEdit] = useState(false);
+  const navigate = useNavigate();
+  const { showToast } = useContext(ToastContext);
+
+  const openClient = () => {
+    const clientObj = clients.find((c) => c.name === (project?.client || detail.split('·')[0].trim()));
+    const target = clientObj ? `/clients/${clientObj.id}?view=projects` : '/clients';
+    navigate(target);
+  };
+
+  const saveQuick = async () => {
+    if (!project) return;
+    const id = project.id || project.name.toLowerCase().replaceAll(' ', '-');
+    try {
+      await updateProject(id, { progress: Number(quickProgress) });
+      showToast('Project progress saved', 'success');
+      setShowQuick(false);
+    } catch (err) {
+      console.error(err);
+      showToast('Unable to save progress', 'error');
+    }
+  };
+
   return (
     <div className="activity-item">
       <span className={"dot " + color} />
@@ -373,12 +429,82 @@ function Activity({ color, title, detail }) {
         <b>{title}</b>
         <p>{detail}</p>
       </div>
+      <div className="activity-actions">
+        <button className="icon-button" onClick={() => setOpenMenu((s) => !s)} aria-label="More">
+          <MoreHorizontal size={16} />
+        </button>
+        {openMenu && (
+          <div className="menu-dropdown" onMouseLeave={() => setOpenMenu(false)}>
+            <button className="menu-item" onClick={() => { setOpenMenu(false); openClient(); }}>Open project</button>
+            <button className="menu-item" onClick={() => { setOpenMenu(false); setShowQuick(true); }}>Quick update progress</button>
+            <button className="menu-item" onClick={() => { setOpenMenu(false); setShowEdit(true); }}>Edit project details</button>
+          </div>
+        )}
+        {showQuick && (
+          <div className="quick-update">
+            <input type="range" min={0} max={100} value={quickProgress} onChange={(e) => setQuickProgress(Number(e.target.value))} />
+            <div className="quick-actions">
+              <button className="secondary-button" onClick={() => setShowQuick(false)}>Cancel</button>
+              <button className="primary-button" onClick={saveQuick}>Save</button>
+            </div>
+          </div>
+        )}
+        {showEdit && project && <EditProject project={project} close={() => setShowEdit(false)} />}
+      </div>
     </div>
   );
 }
 function ProjectRow({ project: p }) {
+  const { updateProject, clients } = usePortalData();
+  const navigate = useNavigate();
+  const [editing, setEditing] = useState(false);
+  const [tempProgress, setTempProgress] = useState(p.progress || 0);
+  const [displayedProgress, setDisplayedProgress] = useState(p.progress || 0);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setTempProgress(p.progress || 0);
+    setDisplayedProgress(p.progress || 0);
+  }, [p.progress]);
+
+  const { showToast } = useContext(ToastContext);
+
+  const saveProgress = async () => {
+    const newValue = Number(tempProgress);
+    const prev = displayedProgress;
+    // Optimistically update UI
+    setDisplayedProgress(newValue);
+    setEditing(false);
+    setSaving(true);
+    setError("");
+    try {
+      const id = p.id || p.name.toLowerCase().replaceAll(" ", "-");
+      await updateProject(id, { progress: newValue });
+      setSaved(true);
+      showToast("Project progress saved", "success");
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      console.error("Unable to update project progress", err);
+      setDisplayedProgress(prev);
+      setError("Unable to save progress");
+      showToast("Unable to save progress", "error");
+      setTimeout(() => setError(""), 3000);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openClient = (e) => {
+    e.stopPropagation();
+    const clientObj = clients.find((c) => c.name === p.client);
+    const target = clientObj ? `/clients/${clientObj.id}?view=projects` : '/clients';
+    navigate(target);
+  };
+
   return (
-    <div className="project-row">
+    <div className="project-row" onClick={openClient} style={{ cursor: "pointer" }}>
       <div className="project-name">
         <span className="project-icon">
           <FolderKanban size={17} />
@@ -394,17 +520,57 @@ function ProjectRow({ project: p }) {
       <div className="progress-wrap">
         <div>
           <span>Progress</span>
-          <b>{p.progress}%</b>
+          {editing ? (
+            <b>{tempProgress}%</b>
+          ) : (
+            <b>
+              {displayedProgress}% {saving ? "(Saving…)" : saved ? "(Saved)" : <Pencil size={12} />}
+            </b>
+          )}
         </div>
         <div className="progress">
-          <i style={{ width: p.progress + "%" }} />
+          {!editing ? (
+            <div onClick={(e) => { e.stopPropagation(); setEditing(true); }} style={{ cursor: "pointer" }}>
+              <i style={{ width: displayedProgress + "%" }} />
+            </div>
+          ) : (
+            <div className="progress-edit">
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={tempProgress}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => setTempProgress(Number(e.target.value))}
+              />
+              <div className="progress-edit-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditing(false);
+                    setTempProgress(p.progress || 0);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button type="button" className="primary-button" onClick={(e) => { e.stopPropagation(); saveProgress(); }}>
+                  OK
+                </button>
+              </div>
+              {error && <p className="form-error">{error}</p>}
+            </div>
+          )}
         </div>
       </div>
       <div className="due">
         <Clock3 size={15} />
         {p.due}
       </div>
-      <ChevronRight className="row-chevron" size={19} />
+      <button type="button" className="row-chevron icon-button" onClick={openClient}>
+        <ChevronRight size={19} />
+      </button>
     </div>
   );
 }
@@ -445,7 +611,6 @@ function Clients() {
           <div className="table-head">
             <span>CLIENT</span>
             <span>CONTACT</span>
-            <span>PROJECTS</span>
             <span>STATUS</span>
             <span>LAST ACTIVITY</span>
             <span />
@@ -465,13 +630,13 @@ function Clients() {
                 <b>{c.contact}</b>
                 <p>{c.email}</p>
               </div>
-              <span>{c.projects} active</span>
               <span
                 className={"status " + c.status.toLowerCase().replace(" ", "-")}
               >
                 {c.status}
               </span>
               <span className="muted">{c.lastActivity}</span>
+              <NavLink to={`/clients/${c.id}?view=projects`} className="text-link small">View projects</NavLink>
               <ChevronRight size={18} />
             </NavLink>
           ))}
@@ -551,18 +716,205 @@ function AddClient({ close }) {
   );
 }
 
+function EditClient({ client, close }) {
+  const { updateClient } = usePortalData();
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const submit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setError("");
+    const form = new FormData(e.currentTarget);
+    const name = form.get("name");
+    try {
+      await updateClient(client.id, {
+        name,
+        contact: form.get("contact"),
+        email: form.get("email"),
+        initials: name
+          .split(" ")
+          .map((word) => word[0])
+          .join("")
+          .slice(0, 2)
+          .toUpperCase(),
+        color: form.get("color") || client.color,
+      });
+      close();
+    } catch (err) {
+      console.error(err);
+      setError("Unable to update this client. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <div className="modal-backdrop">
+      <form className="modal" onSubmit={submit}>
+        <button type="button" className="modal-close" onClick={close}>
+          <X size={18} />
+        </button>
+        <p className="eyebrow">EDIT CLIENT</p>
+        <h2>Edit client</h2>
+        <p className="description">Update client profile details.</p>
+        <label>
+          Company name
+          <input name="name" defaultValue={client.name} required />
+        </label>
+        <label>
+          Primary contact
+          <input name="contact" defaultValue={client.contact} required />
+        </label>
+        <label>
+          Email address
+          <input name="email" type="email" defaultValue={client.email} required />
+        </label>
+        <label>
+          Colour
+          <input name="color" defaultValue={client.color} placeholder="#8457ec" />
+        </label>
+        {error && <p className="form-error">{error}</p>}
+        <div className="modal-actions">
+          <button type="button" className="secondary-button" onClick={close}>
+            Cancel
+          </button>
+          <PrimaryButton icon={Pencil}>{saving ? "Saving…" : "Save changes"}</PrimaryButton>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function EditProject({ project, close }) {
+  const { updateProject } = usePortalData();
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setError("");
+    const form = new FormData(e.currentTarget);
+    const id = project.id || project.name.toLowerCase().replaceAll(' ', '-');
+    try {
+      await updateProject(id, {
+        name: form.get('name'),
+        status: form.get('status'),
+        due: form.get('due') || project.due,
+      });
+      close();
+    } catch (err) {
+      console.error(err);
+      setError('Unable to update project.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="modal-backdrop">
+      <form className="modal" onSubmit={submit}>
+        <button type="button" className="modal-close" onClick={close}>
+          <X size={18} />
+        </button>
+        <p className="eyebrow">EDIT PROJECT</p>
+        <h2>Edit project</h2>
+        <label>
+          Project name
+          <input name="name" defaultValue={project.name} required />
+        </label>
+        <label>
+          Status
+          <select name="status" defaultValue={project.status}>
+            <option>Pre-production</option>
+            <option>In production</option>
+            <option>Review</option>
+          </select>
+        </label>
+        <label>
+          Due date
+          <input name="due" type="date" defaultValue={project.due} />
+        </label>
+        {error && <p className="form-error">{error}</p>}
+        <div className="modal-actions">
+          <button type="button" className="secondary-button" onClick={close}>Cancel</button>
+          <PrimaryButton icon={Pencil}>{saving ? 'Saving…' : 'Save changes'}</PrimaryButton>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function AddActivity({ projects, addActivity, close, user }) {
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setError("");
+    const form = new FormData(e.currentTarget);
+    const title = form.get('title');
+    const message = form.get('message');
+    const projectId = form.get('project') || null;
+    const projectObj = projects.find((p) => (p.id === projectId) || (p.name && p.name.toLowerCase().replaceAll(' ', '-') === projectId));
+    try {
+      await addActivity({ title, message, project: projectObj ? projectObj.name : null, projectId: projectObj ? (projectObj.id || projectObj.name.toLowerCase().replaceAll(' ', '-')) : null, author: user?.displayName || user?.email });
+      close();
+    } catch (err) {
+      console.error(err);
+      setError('Unable to add note.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="modal-backdrop">
+      <form className="modal" onSubmit={submit}>
+        <button type="button" className="modal-close" onClick={close}><X size={18} /></button>
+        <p className="eyebrow">NEW NOTE</p>
+        <h2>Add note</h2>
+        <label>
+          Title
+          <input name="title" placeholder="Short headline" />
+        </label>
+        <label>
+          Message
+          <textarea name="message" required placeholder="Write an important note or notice for the team." />
+        </label>
+        <label>
+          Related project (optional)
+          <select name="project" defaultValue="">
+            <option value="">None</option>
+            {projects.map((p) => {
+              const id = p.id || p.name.toLowerCase().replaceAll(' ', '-');
+              return <option key={id} value={id}>{p.name}</option>
+            })}
+          </select>
+        </label>
+        {error && <p className="form-error">{error}</p>}
+        <div className="modal-actions">
+          <button type="button" className="secondary-button" onClick={close}>Cancel</button>
+          <PrimaryButton icon={Plus}>{saving ? 'Saving…' : 'Add note'}</PrimaryButton>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 function ClientProfile() {
   const { id } = useParams();
   const { clients, projects, assets } = usePortalData();
+  const location = useLocation();
+  const [showEdit, setShowEdit] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
   const client = clients.find((c) => c.id === id);
+  const search = new URLSearchParams(location.search);
+  const showAllProjects = search.get('view') === 'projects';
   if (!client)
     return (
       <Shell>
         <section className="page">
-          <NavLink to="/clients" className="back-link">
-            <ArrowLeft size={16} />
-            All clients
-          </NavLink>
           <p className="description">Client not found.</p>
         </section>
       </Shell>
@@ -570,10 +922,6 @@ function ClientProfile() {
   return (
     <Shell>
       <section className="page">
-        <NavLink to="/clients" className="back-link">
-          <ArrowLeft size={16} />
-          All clients
-        </NavLink>
         <div className="client-hero">
           <span
             className="client-avatar large"
@@ -589,26 +937,12 @@ function ClientProfile() {
             </p>
           </div>
           <div className="hero-actions">
-            <button className="secondary-button">
+            <button className="secondary-button" onClick={() => setShowEdit(true)}>
               <Pencil size={16} />
               Edit client
             </button>
-            <PrimaryButton>New project</PrimaryButton>
+            <PrimaryButton onClick={() => setShowCreate(true)}>New project</PrimaryButton>
           </div>
-        </div>
-        <div className="profile-tabs">
-          <button className="selected">Overview</button>
-          <button>
-            Projects{" "}
-            <span>
-              {projects.filter((p) => p.client === client.name).length}
-            </span>
-          </button>
-          <button>
-            Content{" "}
-            <span>{assets.filter((a) => a.client === client.name).length}</span>
-          </button>
-          <button>Documents</button>
         </div>
         <div className="profile-grid">
           <section className="panel">
@@ -617,16 +951,14 @@ function ClientProfile() {
                 <p className="eyebrow">ACTIVE PROJECTS</p>
                 <h2>Current work</h2>
               </div>
-              <button className="text-link">
-                View all <ArrowUpRight size={15} />
-              </button>
             </div>
-            {projects
-              .filter((p) => p.client === client.name)
-              .slice(0, 2)
-              .map((p) => (
+            {(() => {
+              const clientProjects = projects.filter((p) => p.client === client.name);
+              const toShow = showAllProjects ? clientProjects : clientProjects.slice(0, 2);
+              return toShow.map((p) => (
                 <ProjectRow key={p.id || p.name} project={p} />
-              ))}
+              ));
+            })()}
           </section>
           <section className="panel client-info">
             <p className="eyebrow">CLIENT DETAILS</p>
@@ -669,6 +1001,8 @@ function ClientProfile() {
               ))}
           </div>
         </section>
+        {showEdit && <EditClient client={client} close={() => setShowEdit(false)} />}
+        {showCreate && <AddProject clients={clients} defaultClientId={client.id} close={() => setShowCreate(false)} />}
       </section>
     </Shell>
   );
@@ -908,7 +1242,7 @@ function Projects() {
     </Shell>
   );
 }
-function AddProject({ clients, close }) {
+function AddProject({ clients, close, defaultClientId }) {
   const { addProject } = usePortalData();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -929,7 +1263,7 @@ function AddProject({ clients, close }) {
     <button type="button" className="modal-close" onClick={close}><X size={18}/></button>
     <p className="eyebrow">PRODUCTION PIPELINE</p><h2>New project</h2><p className="description">Create a project and assign it to a client.</p>
     <label>Project name<input name="name" required placeholder="e.g. Autumn campaign"/></label>
-    <label>Client<select name="clientId" required defaultValue=""><option value="" disabled>Select a client</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}</select></label>
+    <label>Client<select name="clientId" required defaultValue={defaultClientId || ""}><option value="" disabled>Select a client</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}</select></label>
     <label>Status<select name="status" defaultValue="Pre-production"><option>Pre-production</option><option>In production</option><option>Review</option></select></label>
     <label>Due date<input name="due" type="date"/></label>
     {error && <p className="form-error">{error}</p>}
