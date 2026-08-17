@@ -1,38 +1,1123 @@
-import React, { useState } from 'react'
-import { NavLink, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ArrowUpRight, Bell, ChevronDown, ChevronRight, CirclePlus, Clock3, Download, FileText, Film, FolderKanban, LayoutDashboard, Menu, MoreHorizontal, Pencil, Play, Plus, Search, Settings, Upload, Users, X } from 'lucide-react'
-import { AuthProvider, useAuth } from './auth/AuthProvider'
-import { createAccount, saveProfile, signIn } from './firebase/authService'
-import { PortalDataProvider, usePortalData } from './data/PortalDataProvider'
+import React, { useState } from "react";
+import {
+  NavLink,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
+import {
+  ArrowLeft,
+  ArrowUpRight,
+  Bell,
+  ChevronDown,
+  ChevronRight,
+  CirclePlus,
+  Clock3,
+  Download,
+  FileText,
+  Film,
+  FolderKanban,
+  LayoutDashboard,
+  Menu,
+  MoreHorizontal,
+  Pencil,
+  Play,
+  Plus,
+  Search,
+  Settings,
+  Upload,
+  Users,
+  X,
+} from "lucide-react";
+import { AuthProvider, useAuth } from "./auth/AuthProvider";
+import { createAccount, saveProfile, signIn } from "./firebase/authService";
+import { PortalDataProvider, usePortalData } from "./data/PortalDataProvider";
 
-const nav = [{ to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }, { to: '/clients', label: 'Clients', icon: Users }, { to: '/content', label: 'Content library', icon: Film }, { to: '/projects', label: 'Projects', icon: FolderKanban }]
-const typeIcon = { Video: Play, Photo: Film, Document: FileText }
+const nav = [
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/clients", label: "Clients", icon: Users },
+  { to: "/content", label: "Content library", icon: Film },
+  { to: "/projects", label: "Projects", icon: FolderKanban },
+];
+const typeIcon = { Video: Play, Photo: Film, Document: FileText };
 
 function Shell({ children }) {
-  const [open, setOpen] = useState(false); const [showNotifications,setShowNotifications]=useState(false); const location = useLocation(); const {user}=useAuth(); const name=user?.displayName||user?.email?.split('@')[0]||'Portal user'; const initials=name.split(' ').map(word=>word[0]).join('').slice(0,2).toUpperCase()
-  return <div className="app-shell"><aside className={open ? 'sidebar is-open' : 'sidebar'}><div className="brand"><span className="brand-mark">W</span><span>WOLFGRAMM</span><button className="mobile-close" onClick={() => setOpen(false)}><X size={18}/></button></div><nav>{nav.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to} className={({isActive}) => isActive || (to === '/clients' && location.pathname.startsWith('/clients')) ? 'nav-link active' : 'nav-link'} onClick={() => setOpen(false)}><Icon size={18}/>{label}</NavLink>)}</nav><div className="sidebar-bottom"><NavLink to="/settings" className="nav-link"><Settings size={18}/>Settings</NavLink><div className="profile"><span className="avatar small">{initials}</span><div><b>{name}</b><span>{user?.email}</span></div></div></div></aside><main><header className="topbar"><button className="menu-button" onClick={() => setOpen(true)}><Menu/></button><div className="crumb">Workspace <ChevronRight size={14}/> <span>Wolfgramm Holdings</span></div><div className="top-actions"><div className="notification-wrap"><button className="icon-button" onClick={()=>setShowNotifications(!showNotifications)} aria-label="Notifications"><Bell size={19}/><i/></button>{showNotifications&&<div className="notification-panel"><b>Notifications</b><p><span/>Content library is ready for new delivery links.</p><p><span/>Your Firestore changes save automatically.</p></div>}</div><span className="avatar">{initials}</span></div></header>{children}</main></div>
+  const [open, setOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const location = useLocation();
+  const { user } = useAuth();
+  const name = user?.displayName || user?.email?.split("@")[0] || "Portal user";
+  const initials = name
+    .split(" ")
+    .map((word) => word[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  return (
+    <div className="app-shell">
+      <aside className={open ? "sidebar is-open" : "sidebar"}>
+        <div className="brand">
+          <span className="brand-mark">W</span>
+          <span>WOLFGRAMM</span>
+          <button className="mobile-close" onClick={() => setOpen(false)}>
+            <X size={18} />
+          </button>
+        </div>
+        <nav>
+          {nav.map(({ to, label, icon: Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                isActive ||
+                (to === "/clients" && location.pathname.startsWith("/clients"))
+                  ? "nav-link active"
+                  : "nav-link"
+              }
+              onClick={() => setOpen(false)}
+            >
+              <Icon size={18} />
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+        <div className="sidebar-bottom">
+          <NavLink to="/settings" className="nav-link">
+            <Settings size={18} />
+            Settings
+          </NavLink>
+          <div className="profile">
+            <span className="avatar small">{initials}</span>
+            <div>
+              <b>{name}</b>
+              <span>{user?.email}</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+      <main>
+        <header className="topbar">
+          <button className="menu-button" onClick={() => setOpen(true)}>
+            <Menu />
+          </button>
+          <div className="crumb">
+            Workspace <ChevronRight size={14} /> <span>Wolfgramm Holdings</span>
+          </div>
+          <div className="top-actions">
+            <div className="notification-wrap">
+              <button
+                className="icon-button"
+                onClick={() => setShowNotifications(!showNotifications)}
+                aria-label="Notifications"
+              >
+                <Bell size={19} />
+                <i />
+              </button>
+              {showNotifications && (
+                <div className="notification-panel">
+                  <b>Notifications</b>
+                  <p>
+                    <span />
+                    Content library is ready for new delivery links.
+                  </p>
+                  <p>
+                    <span />
+                    Your Firestore changes save automatically.
+                  </p>
+                </div>
+              )}
+            </div>
+            <span className="avatar">{initials}</span>
+          </div>
+        </header>
+        {children}
+      </main>
+    </div>
+  );
 }
 
-function PageHeader({ eyebrow, title, description, children }) { return <div className="page-heading"><div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1>{description && <p className="description">{description}</p>}</div>{children && <div className="heading-action">{children}</div>}</div> }
-function PrimaryButton({ children, onClick, icon: Icon = Plus }) { return <button className="primary-button" onClick={onClick}><Icon size={17}/>{children}</button> }
-function toEmbedUrl(url=''){if(url.includes('youtube.com/watch'))return `https://www.youtube.com/embed/${new URL(url).searchParams.get('v')}`;if(url.includes('youtu.be/'))return `https://www.youtube.com/embed/${url.split('/').pop()}`;if(url.includes('vimeo.com/'))return `https://player.vimeo.com/video/${url.split('/').pop()}`;const drive=url.match(/drive\.google\.com\/file\/d\/([^/]+)/);if(drive)return `https://drive.google.com/file/d/${drive[1]}/preview`;return url}
-function MediaViewer({asset,close}){const url=asset.url||asset.externalUrl;const isVideo=/\.(mp4|webm|ogg)(\?.*)?$/i.test(url);return <div className="modal-backdrop media-backdrop"><section className="media-viewer"><button className="modal-close" onClick={close}><X size={18}/></button><div className="media-frame">{isVideo?<video src={url} controls autoPlay/>:<iframe src={toEmbedUrl(url)} title={asset.title} allow="autoplay; fullscreen" allowFullScreen/>}</div><div><p className="eyebrow">{asset.type}</p><h2>{asset.title}</h2><p className="description">{asset.description||'No description has been added for this delivery.'}</p></div></section></div>}
-function AssetCard({ asset, compact = false }) { const [viewing,setViewing]=useState(false); const Icon = typeIcon[asset.type] || FileText; const contentUrl = asset.url || asset.externalUrl; const imageStyle = asset.url ? { backgroundImage: `linear-gradient(180deg,transparent 35%,#09090d99), url("${asset.url}")`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: asset.image || 'linear-gradient(140deg,#5133a0,#171421)' }; return <><article className={compact ? 'asset-card compact' : 'asset-card'}><div className="asset-image" style={imageStyle}>{asset.type === 'Video' && contentUrl && <button className="play-button" onClick={()=>setViewing(true)}><Play size={16} fill="currentColor"/></button>}<span className="asset-type"><Icon size={13}/>{asset.type}</span></div><div className="asset-details"><h3>{asset.title}</h3><p>{asset.client}<span>·</span>{asset.date}</p><p className="asset-description">{asset.description||'No description added.'}</p>{contentUrl&&<button className="asset-open" onClick={()=>setViewing(true)}>View in portal <ArrowUpRight size={12}/></button>}</div></article>{viewing&&<MediaViewer asset={asset} close={()=>setViewing(false)}/>}</> }
+function PageHeader({ eyebrow, title, description, children }) {
+  return (
+    <div className="page-heading">
+      <div>
+        <p className="eyebrow">{eyebrow}</p>
+        <h1>{title}</h1>
+        {description && <p className="description">{description}</p>}
+      </div>
+      {children && <div className="heading-action">{children}</div>}
+    </div>
+  );
+}
+function PrimaryButton({ children, onClick, icon: Icon = Plus }) {
+  return (
+    <button className="primary-button" onClick={onClick}>
+      <Icon size={17} />
+      {children}
+    </button>
+  );
+}
+function toEmbedUrl(url = "") {
+  if (url.includes("youtube.com/watch"))
+    return `https://www.youtube.com/embed/${new URL(url).searchParams.get(
+      "v"
+    )}`;
+  if (url.includes("youtu.be/"))
+    return `https://www.youtube.com/embed/${url.split("/").pop()}`;
+  if (url.includes("vimeo.com/"))
+    return `https://player.vimeo.com/video/${url.split("/").pop()}`;
+  const drive = url.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+  if (drive) return `https://drive.google.com/file/d/${drive[1]}/preview`;
+  return url;
+}
+function MediaViewer({ asset, close }) {
+  const url = asset.url || asset.externalUrl;
+  const isVideo = /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
+  return (
+    <div className="modal-backdrop media-backdrop">
+      <section className="media-viewer">
+        <button className="modal-close" onClick={close}>
+          <X size={18} />
+        </button>
+        <div className="media-frame">
+          {isVideo ? (
+            <video src={url} controls autoPlay />
+          ) : (
+            <iframe
+              src={toEmbedUrl(url)}
+              title={asset.title}
+              allow="autoplay; fullscreen"
+              allowFullScreen
+            />
+          )}
+        </div>
+        <div>
+          <p className="eyebrow">{asset.type}</p>
+          <h2>{asset.title}</h2>
+          <p className="description">
+            {asset.description ||
+              "No description has been added for this delivery."}
+          </p>
+        </div>
+      </section>
+    </div>
+  );
+}
+function AssetCard({ asset, compact = false }) {
+  const [viewing, setViewing] = useState(false);
+  const Icon = typeIcon[asset.type] || FileText;
+  const contentUrl = asset.url || asset.externalUrl;
+  const imageStyle = asset.url
+    ? {
+        backgroundImage: `linear-gradient(180deg,transparent 35%,#09090d99), url("${asset.url}")`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }
+    : { background: asset.image || "linear-gradient(140deg,#5133a0,#171421)" };
+  return (
+    <>
+      <article className={compact ? "asset-card compact" : "asset-card"}>
+        <div className="asset-image" style={imageStyle}>
+          {asset.type === "Video" && contentUrl && (
+            <button className="play-button" onClick={() => setViewing(true)}>
+              <Play size={16} fill="currentColor" />
+            </button>
+          )}
+          <span className="asset-type">
+            <Icon size={13} />
+            {asset.type}
+          </span>
+        </div>
+        <div className="asset-details">
+          <h3>{asset.title}</h3>
+          <p>
+            {asset.client}
+            <span>·</span>
+            {asset.date}
+          </p>
+          <p className="asset-description">
+            {asset.description || "No description added."}
+          </p>
+          {contentUrl && (
+            <button className="asset-open" onClick={() => setViewing(true)}>
+              View in portal <ArrowUpRight size={12} />
+            </button>
+          )}
+        </div>
+      </article>
+      {viewing && <MediaViewer asset={asset} close={() => setViewing(false)} />}
+    </>
+  );
+}
 
-function Dashboard() { const {clients,assets,projects}=usePortalData(); const navigate=useNavigate(); return <Shell><section className="page"><PageHeader eyebrow="OVERVIEW" title="Good afternoon, Mark." description="Here’s what’s happening across your client work today."><PrimaryButton onClick={() => navigate('/content?link=1')}>Add content link</PrimaryButton></PageHeader><div className="stats-grid"><Stat icon={Users} label="Active clients" value={clients.length} change="Live Firestore data"/><Stat icon={FolderKanban} label="Live projects" value={projects.length} change="Production pipeline"/><Stat icon={Film} label="Content delivered" value={assets.length} change="In content library"/></div><div className="dashboard-grid"><section className="panel recent-panel"><div className="panel-title"><div><p className="eyebrow">RECENT WORK</p><h2>Latest content</h2></div><NavLink to="/content" className="text-link">View library <ArrowUpRight size={15}/></NavLink></div><div className="asset-row">{assets.slice(0,3).map(a=><AssetCard key={a.id} asset={a} compact/>)}</div></section><section className="panel activity"><div className="panel-title"><div><p className="eyebrow">ACTIVITY</p><h2>What needs attention</h2></div><button className="icon-button"><MoreHorizontal size={19}/></button></div><Activity color="gold" title="Summer campaign is ready for review" detail="ABC Media · 24 minutes ago"/><Activity color="blue" title="New files added to Brand Film 2026" detail="Pacific Creative · 2 hours ago"/><Activity color="purple" title="Project timeline updated" detail="Northstar Events · Yesterday"/></section></div><section className="panel projects-panel"><div className="panel-title"><div><p className="eyebrow">PROJECTS</p><h2>In progress</h2></div><NavLink to="/projects" className="text-link">View all <ArrowUpRight size={15}/></NavLink></div>{projects.map(p=><ProjectRow key={p.id||p.name} project={p}/>)}</section></section></Shell> }
-function Stat({icon: Icon,label,value,change}) { return <div className="stat-card"><div className="stat-icon"><Icon size={20}/></div><div><p>{label}</p><h2>{value}</h2><span>{change}</span></div></div> }
-function Activity({color,title,detail}) { return <div className="activity-item"><span className={'dot '+color}/><div><b>{title}</b><p>{detail}</p></div></div> }
-function ProjectRow({project:p}) { return <div className="project-row"><div className="project-name"><span className="project-icon"><FolderKanban size={17}/></span><div><b>{p.name}</b><p>{p.client}</p></div></div><span className={'status '+p.status.toLowerCase().replaceAll(' ','-')}>{p.status}</span><div className="progress-wrap"><div><span>Progress</span><b>{p.progress}%</b></div><div className="progress"><i style={{width:p.progress+'%'}}/></div></div><div className="due"><Clock3 size={15}/>{p.due}</div><ChevronRight className="row-chevron" size={19}/></div> }
+function Dashboard() {
+  const { clients, assets, projects } = usePortalData();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const displayName = user?.displayName || user?.email?.split("@")[0] || "there";
+  return (
+    <Shell>
+      <section className="page">
+        <PageHeader
+          eyebrow="OVERVIEW"
+          title={`Good afternoon, ${displayName}.`}
+          description="Here’s what’s happening across your client work today."
+        >
+          <PrimaryButton onClick={() => navigate("/content?link=1")}>
+            Add content link
+          </PrimaryButton>
+        </PageHeader>
+        <div className="stats-grid">
+          <Stat
+            icon={Users}
+            label="Active clients"
+            value={clients.length}
+            change="Live Firestore data"
+          />
+          <Stat
+            icon={FolderKanban}
+            label="Live projects"
+            value={projects.length}
+            change="Production pipeline"
+          />
+          <Stat
+            icon={Film}
+            label="Content delivered"
+            value={assets.length}
+            change="In content library"
+          />
+        </div>
+        <div className="dashboard-grid">
+          <section className="panel recent-panel">
+            <div className="panel-title">
+              <div>
+                <p className="eyebrow">RECENT WORK</p>
+                <h2>Latest content</h2>
+              </div>
+              <NavLink to="/content" className="text-link">
+                View library <ArrowUpRight size={15} />
+              </NavLink>
+            </div>
+            <div className="asset-row">
+              {assets.slice(0, 3).map((a) => (
+                <AssetCard key={a.id} asset={a} compact />
+              ))}
+            </div>
+          </section>
+          <section className="panel activity">
+            <div className="panel-title">
+              <div>
+                <p className="eyebrow">ACTIVITY</p>
+                <h2>What needs attention</h2>
+              </div>
+              <button className="icon-button">
+                <MoreHorizontal size={19} />
+              </button>
+            </div>
+            <Activity
+              color="gold"
+              title="Summer campaign is ready for review"
+              detail="ABC Media · 24 minutes ago"
+            />
+            <Activity
+              color="blue"
+              title="New files added to Brand Film 2026"
+              detail="Pacific Creative · 2 hours ago"
+            />
+            <Activity
+              color="purple"
+              title="Project timeline updated"
+              detail="Northstar Events · Yesterday"
+            />
+          </section>
+        </div>
+        <section className="panel projects-panel">
+          <div className="panel-title">
+            <div>
+              <p className="eyebrow">PROJECTS</p>
+              <h2>In progress</h2>
+            </div>
+            <NavLink to="/projects" className="text-link">
+              View all <ArrowUpRight size={15} />
+            </NavLink>
+          </div>
+          {projects.map((p) => (
+            <ProjectRow key={p.id || p.name} project={p} />
+          ))}
+        </section>
+      </section>
+    </Shell>
+  );
+}
+function Stat({ icon: Icon, label, value, change }) {
+  return (
+    <div className="stat-card">
+      <div className="stat-icon">
+        <Icon size={20} />
+      </div>
+      <div>
+        <p>{label}</p>
+        <h2>{value}</h2>
+        <span>{change}</span>
+      </div>
+    </div>
+  );
+}
+function Activity({ color, title, detail }) {
+  return (
+    <div className="activity-item">
+      <span className={"dot " + color} />
+      <div>
+        <b>{title}</b>
+        <p>{detail}</p>
+      </div>
+    </div>
+  );
+}
+function ProjectRow({ project: p }) {
+  return (
+    <div className="project-row">
+      <div className="project-name">
+        <span className="project-icon">
+          <FolderKanban size={17} />
+        </span>
+        <div>
+          <b>{p.name}</b>
+          <p>{p.client}</p>
+        </div>
+      </div>
+      <span className={"status " + p.status.toLowerCase().replaceAll(" ", "-")}>
+        {p.status}
+      </span>
+      <div className="progress-wrap">
+        <div>
+          <span>Progress</span>
+          <b>{p.progress}%</b>
+        </div>
+        <div className="progress">
+          <i style={{ width: p.progress + "%" }} />
+        </div>
+      </div>
+      <div className="due">
+        <Clock3 size={15} />
+        {p.due}
+      </div>
+      <ChevronRight className="row-chevron" size={19} />
+    </div>
+  );
+}
 
-function Clients() { const {clients}=usePortalData(); const [query, setQuery] = useState(''); const [showAdd,setShowAdd]=useState(false); const filtered=clients.filter(c=>c.name.toLowerCase().includes(query.toLowerCase())); return <Shell><section className="page"><PageHeader eyebrow="CLIENT MANAGEMENT" title="Clients" description="Manage client relationships, projects and creative deliverables."><PrimaryButton onClick={()=>setShowAdd(true)}>Add client</PrimaryButton></PageHeader><div className="toolbar"><label className="search"><Search size={18}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search clients"/></label><button className="filter-button">Status: All <ChevronDown size={16}/></button></div><div className="client-table panel"><div className="table-head"><span>CLIENT</span><span>CONTACT</span><span>PROJECTS</span><span>STATUS</span><span>LAST ACTIVITY</span><span/></div>{filtered.map(c=><NavLink className="client-row" to={'/clients/'+c.id} key={c.id}><div className="client-name"><span className="client-avatar" style={{background:c.color||'#8457ec'}}>{c.initials}</span><b>{c.name}</b></div><div className="contact"><b>{c.contact}</b><p>{c.email}</p></div><span>{c.projects} active</span><span className={'status '+c.status.toLowerCase().replace(' ','-')}>{c.status}</span><span className="muted">{c.lastActivity}</span><ChevronRight size={18}/></NavLink>)}</div></section>{showAdd&&<AddClient close={()=>setShowAdd(false)}/>}</Shell> }
-function AddClient({close}) { const {addClient}=usePortalData(); const [saving,setSaving]=useState(false);const [error,setError]=useState('');const submit=async e=>{e.preventDefault();setSaving(true);setError('');const form=new FormData(e.currentTarget);const name=form.get('name');try{await addClient({name,contact:form.get('contact'),email:form.get('email'),initials:name.split(' ').map(word=>word[0]).join('').slice(0,2).toUpperCase(),color:'#8457ec'});close()}catch{setError('Unable to save this client. Please try again.')}finally{setSaving(false)}};return <div className="modal-backdrop"><form className="modal" onSubmit={submit}><button type="button" className="modal-close" onClick={close}><X size={18}/></button><p className="eyebrow">NEW RELATIONSHIP</p><h2>Add client</h2><p className="description">Create a profile for a new client.</p><label>Company name<input name="name" required placeholder="e.g. ABC Media"/></label><label>Primary contact<input name="contact" required placeholder="Full name"/></label><label>Email address<input name="email" type="email" required placeholder="name@company.com"/></label>{error&&<p className="form-error">{error}</p>}<div className="modal-actions"><button type="button" className="secondary-button" onClick={close}>Cancel</button><PrimaryButton icon={CirclePlus}>{saving?'Saving…':'Create client'}</PrimaryButton></div></form></div> }
+function Clients() {
+  const { clients } = usePortalData();
+  const [query, setQuery] = useState("");
+  const [showAdd, setShowAdd] = useState(false);
+  const filtered = clients.filter((c) =>
+    c.name.toLowerCase().includes(query.toLowerCase())
+  );
+  return (
+    <Shell>
+      <section className="page">
+        <PageHeader
+          eyebrow="CLIENT MANAGEMENT"
+          title="Clients"
+          description="Manage client relationships, projects and creative deliverables."
+        >
+          <PrimaryButton onClick={() => setShowAdd(true)}>
+            Add client
+          </PrimaryButton>
+        </PageHeader>
+        <div className="toolbar">
+          <label className="search">
+            <Search size={18} />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search clients"
+            />
+          </label>
+          <button className="filter-button">
+            Status: All <ChevronDown size={16} />
+          </button>
+        </div>
+        <div className="client-table panel">
+          <div className="table-head">
+            <span>CLIENT</span>
+            <span>CONTACT</span>
+            <span>PROJECTS</span>
+            <span>STATUS</span>
+            <span>LAST ACTIVITY</span>
+            <span />
+          </div>
+          {filtered.map((c) => (
+            <NavLink className="client-row" to={"/clients/" + c.id} key={c.id}>
+              <div className="client-name">
+                <span
+                  className="client-avatar"
+                  style={{ background: c.color || "#8457ec" }}
+                >
+                  {c.initials}
+                </span>
+                <b>{c.name}</b>
+              </div>
+              <div className="contact">
+                <b>{c.contact}</b>
+                <p>{c.email}</p>
+              </div>
+              <span>{c.projects} active</span>
+              <span
+                className={"status " + c.status.toLowerCase().replace(" ", "-")}
+              >
+                {c.status}
+              </span>
+              <span className="muted">{c.lastActivity}</span>
+              <ChevronRight size={18} />
+            </NavLink>
+          ))}
+        </div>
+      </section>
+      {showAdd && <AddClient close={() => setShowAdd(false)} />}
+    </Shell>
+  );
+}
+function AddClient({ close }) {
+  const { addClient } = usePortalData();
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const submit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setError("");
+    const form = new FormData(e.currentTarget);
+    const name = form.get("name");
+    try {
+      await addClient({
+        name,
+        contact: form.get("contact"),
+        email: form.get("email"),
+        initials: name
+          .split(" ")
+          .map((word) => word[0])
+          .join("")
+          .slice(0, 2)
+          .toUpperCase(),
+        color: "#8457ec",
+      });
+      close();
+    } catch {
+      setError("Unable to save this client. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <div className="modal-backdrop">
+      <form className="modal" onSubmit={submit}>
+        <button type="button" className="modal-close" onClick={close}>
+          <X size={18} />
+        </button>
+        <p className="eyebrow">NEW RELATIONSHIP</p>
+        <h2>Add client</h2>
+        <p className="description">Create a profile for a new client.</p>
+        <label>
+          Company name
+          <input name="name" required placeholder="e.g. ABC Media" />
+        </label>
+        <label>
+          Primary contact
+          <input name="contact" required placeholder="Full name" />
+        </label>
+        <label>
+          Email address
+          <input
+            name="email"
+            type="email"
+            required
+            placeholder="name@company.com"
+          />
+        </label>
+        {error && <p className="form-error">{error}</p>}
+        <div className="modal-actions">
+          <button type="button" className="secondary-button" onClick={close}>
+            Cancel
+          </button>
+          <PrimaryButton icon={CirclePlus}>
+            {saving ? "Saving…" : "Create client"}
+          </PrimaryButton>
+        </div>
+      </form>
+    </div>
+  );
+}
 
-function ClientProfile() { const {id}=useParams(); const {clients,projects,assets}=usePortalData(); const client=clients.find(c=>c.id===id); if(!client)return <Shell><section className="page"><NavLink to="/clients" className="back-link"><ArrowLeft size={16}/>All clients</NavLink><p className="description">Client not found.</p></section></Shell>; return <Shell><section className="page"><NavLink to="/clients" className="back-link"><ArrowLeft size={16}/>All clients</NavLink><div className="client-hero"><span className="client-avatar large" style={{background:client.color||'#8457ec'}}>{client.initials}</span><div><p className="eyebrow">CLIENT PROFILE</p><h1>{client.name}</h1><p>{client.contact} · {client.email}</p></div><div className="hero-actions"><button className="secondary-button"><Pencil size={16}/>Edit client</button><PrimaryButton>New project</PrimaryButton></div></div><div className="profile-tabs"><button className="selected">Overview</button><button>Projects <span>{projects.filter(p=>p.client===client.name).length}</span></button><button>Content <span>{assets.filter(a=>a.client===client.name).length}</span></button><button>Documents</button></div><div className="profile-grid"><section className="panel"><div className="panel-title"><div><p className="eyebrow">ACTIVE PROJECTS</p><h2>Current work</h2></div><button className="text-link">View all <ArrowUpRight size={15}/></button></div>{projects.filter(p=>p.client===client.name).slice(0,2).map(p=><ProjectRow key={p.id||p.name} project={p}/>)}</section><section className="panel client-info"><p className="eyebrow">CLIENT DETAILS</p><dl><div><dt>Primary contact</dt><dd>{client.contact}</dd></div><div><dt>Email</dt><dd>{client.email}</dd></div><div><dt>Client since</dt><dd>March 2024</dd></div><div><dt>Account manager</dt><dd>Mark Wolfgramm</dd></div></dl></section></div><section className="panel profile-content"><div className="panel-title"><div><p className="eyebrow">RECENT CONTENT</p><h2>Latest deliverables</h2></div><NavLink className="text-link" to="/content">View library <ArrowUpRight size={15}/></NavLink></div><div className="asset-row">{assets.filter(a=>a.client===client.name).slice(0,3).map(a=><AssetCard key={a.id} asset={a} compact/>)}</div></section></section></Shell> }
+function ClientProfile() {
+  const { id } = useParams();
+  const { clients, projects, assets } = usePortalData();
+  const client = clients.find((c) => c.id === id);
+  if (!client)
+    return (
+      <Shell>
+        <section className="page">
+          <NavLink to="/clients" className="back-link">
+            <ArrowLeft size={16} />
+            All clients
+          </NavLink>
+          <p className="description">Client not found.</p>
+        </section>
+      </Shell>
+    );
+  return (
+    <Shell>
+      <section className="page">
+        <NavLink to="/clients" className="back-link">
+          <ArrowLeft size={16} />
+          All clients
+        </NavLink>
+        <div className="client-hero">
+          <span
+            className="client-avatar large"
+            style={{ background: client.color || "#8457ec" }}
+          >
+            {client.initials}
+          </span>
+          <div>
+            <p className="eyebrow">CLIENT PROFILE</p>
+            <h1>{client.name}</h1>
+            <p>
+              {client.contact} · {client.email}
+            </p>
+          </div>
+          <div className="hero-actions">
+            <button className="secondary-button">
+              <Pencil size={16} />
+              Edit client
+            </button>
+            <PrimaryButton>New project</PrimaryButton>
+          </div>
+        </div>
+        <div className="profile-tabs">
+          <button className="selected">Overview</button>
+          <button>
+            Projects{" "}
+            <span>
+              {projects.filter((p) => p.client === client.name).length}
+            </span>
+          </button>
+          <button>
+            Content{" "}
+            <span>{assets.filter((a) => a.client === client.name).length}</span>
+          </button>
+          <button>Documents</button>
+        </div>
+        <div className="profile-grid">
+          <section className="panel">
+            <div className="panel-title">
+              <div>
+                <p className="eyebrow">ACTIVE PROJECTS</p>
+                <h2>Current work</h2>
+              </div>
+              <button className="text-link">
+                View all <ArrowUpRight size={15} />
+              </button>
+            </div>
+            {projects
+              .filter((p) => p.client === client.name)
+              .slice(0, 2)
+              .map((p) => (
+                <ProjectRow key={p.id || p.name} project={p} />
+              ))}
+          </section>
+          <section className="panel client-info">
+            <p className="eyebrow">CLIENT DETAILS</p>
+            <dl>
+              <div>
+                <dt>Primary contact</dt>
+                <dd>{client.contact}</dd>
+              </div>
+              <div>
+                <dt>Email</dt>
+                <dd>{client.email}</dd>
+              </div>
+              <div>
+                <dt>Client since</dt>
+                <dd>March 2024</dd>
+              </div>
+              <div>
+                <dt>Account manager</dt>
+                <dd>Mark Wolfgramm</dd>
+              </div>
+            </dl>
+          </section>
+        </div>
+        <section className="panel profile-content">
+          <div className="panel-title">
+            <div>
+              <p className="eyebrow">RECENT CONTENT</p>
+              <h2>Latest deliverables</h2>
+            </div>
+            <NavLink className="text-link" to="/content">
+              View library <ArrowUpRight size={15} />
+            </NavLink>
+          </div>
+          <div className="asset-row">
+            {assets
+              .filter((a) => a.client === client.name)
+              .slice(0, 3)
+              .map((a) => (
+                <AssetCard key={a.id} asset={a} compact />
+              ))}
+          </div>
+        </section>
+      </section>
+    </Shell>
+  );
+}
 
-function Content() { const {assets,clients}=usePortalData(); const location=useLocation(); const [filter,setFilter]=useState('All content'); const [showAddLink,setShowAddLink]=useState(location.search.includes('link=1')); const [viewing,setViewing]=useState(null); const shown=filter==='All content'?assets:assets.filter(a=>a.type===filter); const featured=assets.find(asset=>asset.type==='Video')||assets[0]; return <Shell><section className="page"><PageHeader eyebrow="CREATIVE ASSETS" title="Content library" description="One place for every deliverable, review and approved asset."><PrimaryButton onClick={()=>setShowAddLink(true)}>Add content link</PrimaryButton></PageHeader><div className="content-toolbar"><label className="search"><Search size={18}/><input placeholder="Search content"/></label><div className="segmented">{['All content','Video','Photo','Document'].map(t=><button className={filter===t?'active':''} onClick={()=>setFilter(t)} key={t}>{t}</button>)}</div></div>{featured?<div className="content-feature"><div className="feature-art"><span>FEATURED<br/>DELIVERY</span><button className="feature-play" onClick={()=>setViewing(featured)}><Play size={18} fill="currentColor"/></button></div><div className="feature-copy"><p className="eyebrow">FEATURED DELIVERY</p><h2>{featured.title}</h2><p>{featured.description||'No description has been added for this delivery.'}</p><div><span>{featured.client}</span><span>·</span><span>{featured.type}</span></div><button className="secondary-button" onClick={()=>setViewing(featured)}><Play size={16}/>View in portal</button></div></div>:<div className="empty-feature"><p className="eyebrow">CONTENT LIBRARY</p><h2>Add your first delivery</h2><p>Save a video, image, or document share link to start your client library.</p></div>}<div className="library-label"><h2>All content <span>{shown.length}</span></h2><button className="filter-button">Newest first <ChevronDown size={16}/></button></div><div className="asset-grid">{shown.map(a=><AssetCard key={a.id} asset={a}/>)}</div></section>{showAddLink&&<AddContentLink clients={clients} close={()=>setShowAddLink(false)}/>} {viewing&&<MediaViewer asset={viewing} close={()=>setViewing(null)}/>}</Shell> }
-function AddContentLink({clients,close}) { const {addContentLink}=usePortalData(); const [saving,setSaving]=useState(false);const [error,setError]=useState('');const submit=async e=>{e.preventDefault();const form=new FormData(e.currentTarget);const client=clients.find(item=>item.id===form.get('clientId'));if(!client){setError('Choose a client.');return}setSaving(true);setError('');try{await addContentLink({clientId:client.id,client:client.name,title:form.get('title'),description:form.get('description'),type:form.get('type'),externalUrl:form.get('externalUrl')});close()}catch(err){console.error(err);setError('Unable to save this content link. Please try again.')}finally{setSaving(false)}};return <div className="modal-backdrop"><form className="modal upload-modal" onSubmit={submit}><button type="button" className="modal-close" onClick={close}><X size={18}/></button><p className="eyebrow">NEW DELIVERABLE</p><h2>Add content link</h2><p className="description">Paste a share link from Google Drive, YouTube, Vimeo, Dropbox, or another approved host.</p><label>Client<select name="clientId" required defaultValue=""><option value="" disabled>Select a client</option>{clients.map(client=><option key={client.id} value={client.id}>{client.name}</option>)}</select></label><label>Content title<input name="title" required placeholder="e.g. Summer campaign final film"/></label><label>Description<textarea name="description" required placeholder="Describe the delivery, version, approval status, or intended usage."/></label><label>Content type<select name="type" defaultValue="Video"><option>Video</option><option>Photo</option><option>Document</option></select></label><label>Share link<input name="externalUrl" type="url" required placeholder="https://…"/></label>{error&&<p className="form-error">{error}</p>}<div className="modal-actions"><button type="button" className="secondary-button" onClick={close}>Cancel</button><PrimaryButton icon={Plus}>{saving?'Saving…':'Add content link'}</PrimaryButton></div></form></div> }
-function Projects(){const {projects}=usePortalData();return <Shell><section className="page"><PageHeader eyebrow="PRODUCTION PIPELINE" title="Projects" description="Track progress from first idea to final delivery."><PrimaryButton>New project</PrimaryButton></PageHeader><section className="panel projects-panel">{projects.map(p=><ProjectRow key={p.id||p.name} project={p}/>)}</section></section></Shell>}
-function SettingsPage(){const {user}=useAuth();const {clearDemoData}=usePortalData();const [name,setName]=useState(user?.displayName||user?.email?.split('@')[0]||'');const [message,setMessage]=useState('');const save=async()=>{await saveProfile(name);setMessage('Profile saved. Refresh the page to update the sidebar name.')};const removeDemo=async()=>{if(!window.confirm('Remove only the seeded sample clients, projects and content? Your own new records are not deleted.'))return;await clearDemoData();setMessage('Sample data removed.')};return <Shell><section className="page"><PageHeader eyebrow="WORKSPACE" title="Settings" description="Manage your Wolfgramm Holdings workspace."/><section className="panel settings-panel"><p className="eyebrow">PROFILE</p><h2>Your profile</h2><label>Display name<input value={name} onChange={e=>setName(e.target.value)}/></label><label>Email<input value={user?.email||''} readOnly/></label><PrimaryButton icon={Pencil} onClick={save}>Save changes</PrimaryButton>{message&&<p className="settings-message">{message}</p>}<div className="danger-zone"><p className="eyebrow">DEMO DATA</p><h3>Remove sample content</h3><p>Deletes only the original ABC Media sample clients, projects, and content. Your own entries remain.</p><button className="danger-button" onClick={removeDemo}>Remove demo data</button></div></section></section></Shell>}
-function Login(){const nav=useNavigate();const {user}=useAuth();const [isCreating,setIsCreating]=useState(false);const [email,setEmail]=useState('');const [password,setPassword]=useState('');const [error,setError]=useState('');const [submitting,setSubmitting]=useState(false);if(user)return <Navigate to="/dashboard" replace/>;const submit=async e=>{e.preventDefault();setError('');setSubmitting(true);try{await (isCreating?createAccount(email,password):signIn(email,password));nav('/dashboard')}catch(err){const messages={'auth/invalid-credential':'Incorrect email or password.','auth/email-already-in-use':'An account already exists with this email.','auth/weak-password':'Use a password with at least 6 characters.','auth/operation-not-allowed':'Enable Email/Password sign-in in Firebase Authentication.'};setError(messages[err.code]||'Unable to continue. Please try again.')}finally{setSubmitting(false)}};return <div className="login"><div className="login-brand"><span className="brand-mark">W</span>WOLFGRAMM</div><form className="login-card" onSubmit={submit}><p className="eyebrow">CLIENT PORTAL</p><h1>{isCreating?'Create your account.':'Welcome back.'}</h1><p>{isCreating?'Set up your secure Wolfgramm portal account.':'Sign in to access your client work and deliverables.'}</p><label>Email address<input type="email" value={email} onChange={e=>setEmail(e.target.value)} autoComplete="email" required/></label><label>Password<input type="password" value={password} onChange={e=>setPassword(e.target.value)} autoComplete={isCreating?'new-password':'current-password'} minLength="6" required/></label>{error&&<p className="form-error">{error}</p>}<button className="primary-button full" disabled={submitting}>{submitting?'Please wait…':isCreating?'Create account':'Sign in'}</button><button type="button" className="auth-switch" onClick={()=>{setIsCreating(!isCreating);setError('')}}>{isCreating?'Already have an account? Sign in':'New here? Create an account'}</button></form></div>}
-function ProtectedRoute({children}){const {user,loading}=useAuth();if(loading)return <div className="auth-loading">Loading portal…</div>;return user?children:<Navigate to="/login" replace/>}
-export default function App(){return <AuthProvider><PortalDataProvider><Routes><Route path="/login" element={<Login/>}/><Route path="/dashboard" element={<ProtectedRoute><Dashboard/></ProtectedRoute>}/><Route path="/clients" element={<ProtectedRoute><Clients/></ProtectedRoute>}/><Route path="/clients/:id" element={<ProtectedRoute><ClientProfile/></ProtectedRoute>}/><Route path="/content" element={<ProtectedRoute><Content/></ProtectedRoute>}/><Route path="/projects" element={<ProtectedRoute><Projects/></ProtectedRoute>}/><Route path="/settings" element={<ProtectedRoute><SettingsPage/></ProtectedRoute>}/><Route path="*" element={<Navigate to="/dashboard" replace/>}/></Routes></PortalDataProvider></AuthProvider>}
+function Content() {
+  const { assets, clients } = usePortalData();
+  const location = useLocation();
+  const [filter, setFilter] = useState("All content");
+  const [showAddLink, setShowAddLink] = useState(
+    location.search.includes("link=1")
+  );
+  const [viewing, setViewing] = useState(null);
+  const shown =
+    filter === "All content" ? assets : assets.filter((a) => a.type === filter);
+  const featured = assets.find((asset) => asset.type === "Video") || assets[0];
+  return (
+    <Shell>
+      <section className="page">
+        <PageHeader
+          eyebrow="CREATIVE ASSETS"
+          title="Content library"
+          description="One place for every deliverable, review and approved asset."
+        >
+          <PrimaryButton onClick={() => setShowAddLink(true)}>
+            Add content link
+          </PrimaryButton>
+        </PageHeader>
+        <div className="content-toolbar">
+          <label className="search">
+            <Search size={18} />
+            <input placeholder="Search content" />
+          </label>
+          <div className="segmented">
+            {["All content", "Video", "Photo", "Document"].map((t) => (
+              <button
+                className={filter === t ? "active" : ""}
+                onClick={() => setFilter(t)}
+                key={t}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
+        {featured ? (
+          <div className="content-feature">
+            <div className="feature-art">
+              <span>
+                FEATURED
+                <br />
+                DELIVERY
+              </span>
+              <button
+                className="feature-play"
+                onClick={() => setViewing(featured)}
+              >
+                <Play size={18} fill="currentColor" />
+              </button>
+            </div>
+            <div className="feature-copy">
+              <p className="eyebrow">FEATURED DELIVERY</p>
+              <h2>{featured.title}</h2>
+              <p>
+                {featured.description ||
+                  "No description has been added for this delivery."}
+              </p>
+              <div>
+                <span>{featured.client}</span>
+                <span>·</span>
+                <span>{featured.type}</span>
+              </div>
+              <button
+                className="secondary-button"
+                onClick={() => setViewing(featured)}
+              >
+                <Play size={16} />
+                View in portal
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="empty-feature">
+            <p className="eyebrow">CONTENT LIBRARY</p>
+            <h2>Add your first delivery</h2>
+            <p>
+              Save a video, image, or document share link to start your client
+              library.
+            </p>
+          </div>
+        )}
+        <div className="library-label">
+          <h2>
+            All content <span>{shown.length}</span>
+          </h2>
+          <button className="filter-button">
+            Newest first <ChevronDown size={16} />
+          </button>
+        </div>
+        <div className="asset-grid">
+          {shown.map((a) => (
+            <AssetCard key={a.id} asset={a} />
+          ))}
+        </div>
+      </section>
+      {showAddLink && (
+        <AddContentLink clients={clients} close={() => setShowAddLink(false)} />
+      )}{" "}
+      {viewing && (
+        <MediaViewer asset={viewing} close={() => setViewing(null)} />
+      )}
+    </Shell>
+  );
+}
+function AddContentLink({ clients, close }) {
+  const { addContentLink } = usePortalData();
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const submit = async (e) => {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    const client = clients.find((item) => item.id === form.get("clientId"));
+    if (!client) {
+      setError("Choose a client.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      await addContentLink({
+        clientId: client.id,
+        client: client.name,
+        title: form.get("title"),
+        description: form.get("description"),
+        type: form.get("type"),
+        externalUrl: form.get("externalUrl"),
+      });
+      close();
+    } catch (err) {
+      console.error(err);
+      setError("Unable to save this content link. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <div className="modal-backdrop">
+      <form className="modal upload-modal" onSubmit={submit}>
+        <button type="button" className="modal-close" onClick={close}>
+          <X size={18} />
+        </button>
+        <p className="eyebrow">NEW DELIVERABLE</p>
+        <h2>Add content link</h2>
+        <p className="description">
+          Paste a share link from Google Drive, YouTube, Vimeo, Dropbox, or
+          another approved host.
+        </p>
+        <label>
+          Client
+          <select name="clientId" required defaultValue="">
+            <option value="" disabled>
+              Select a client
+            </option>
+            {clients.map((client) => (
+              <option key={client.id} value={client.id}>
+                {client.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Content title
+          <input
+            name="title"
+            required
+            placeholder="e.g. Summer campaign final film"
+          />
+        </label>
+        <label>
+          Description
+          <textarea
+            name="description"
+            required
+            placeholder="Describe the delivery, version, approval status, or intended usage."
+          />
+        </label>
+        <label>
+          Content type
+          <select name="type" defaultValue="Video">
+            <option>Video</option>
+            <option>Photo</option>
+            <option>Document</option>
+          </select>
+        </label>
+        <label>
+          Share link
+          <input
+            name="externalUrl"
+            type="url"
+            required
+            placeholder="https://…"
+          />
+        </label>
+        {error && <p className="form-error">{error}</p>}
+        <div className="modal-actions">
+          <button type="button" className="secondary-button" onClick={close}>
+            Cancel
+          </button>
+          <PrimaryButton icon={Plus}>
+            {saving ? "Saving…" : "Add content link"}
+          </PrimaryButton>
+        </div>
+      </form>
+    </div>
+  );
+}
+function Projects() {
+  const { projects } = usePortalData();
+  return (
+    <Shell>
+      <section className="page">
+        <PageHeader
+          eyebrow="PRODUCTION PIPELINE"
+          title="Projects"
+          description="Track progress from first idea to final delivery."
+        >
+          <PrimaryButton>New project</PrimaryButton>
+        </PageHeader>
+        <section className="panel projects-panel">
+          {projects.map((p) => (
+            <ProjectRow key={p.id || p.name} project={p} />
+          ))}
+        </section>
+      </section>
+    </Shell>
+  );
+}
+function SettingsPage() {
+  const { user } = useAuth();
+  const { clearDemoData } = usePortalData();
+  const [name, setName] = useState(
+    user?.displayName || user?.email?.split("@")[0] || ""
+  );
+  const [message, setMessage] = useState("");
+  const save = async () => {
+    await saveProfile(name);
+    setMessage("Profile saved. Refresh the page to update the sidebar name.");
+  };
+  const removeDemo = async () => {
+    if (
+      !window.confirm(
+        "Remove only the seeded sample clients, projects and content? Your own new records are not deleted."
+      )
+    )
+      return;
+    await clearDemoData();
+    setMessage("Sample data removed.");
+  };
+  return (
+    <Shell>
+      <section className="page">
+        <PageHeader
+          eyebrow="WORKSPACE"
+          title="Settings"
+          description="Manage your Wolfgramm Holdings workspace."
+        />
+        <section className="panel settings-panel">
+          <p className="eyebrow">PROFILE</p>
+          <h2>Your profile</h2>
+          <label>
+            Display name
+            <input value={name} onChange={(e) => setName(e.target.value)} />
+          </label>
+          <label>
+            Email
+            <input value={user?.email || ""} readOnly />
+          </label>
+          <PrimaryButton icon={Pencil} onClick={save}>
+            Save changes
+          </PrimaryButton>
+          {message && <p className="settings-message">{message}</p>}
+          <div className="danger-zone">
+            <p className="eyebrow">DEMO DATA</p>
+            <h3>Remove sample content</h3>
+            <p>
+              Deletes only the original ABC Media sample clients, projects, and
+              content. Your own entries remain.
+            </p>
+            <button className="danger-button" onClick={removeDemo}>
+              Remove demo data
+            </button>
+          </div>
+        </section>
+      </section>
+    </Shell>
+  );
+}
+function Login() {
+  const nav = useNavigate();
+  const { user } = useAuth();
+  const [isCreating, setIsCreating] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  if (user) return <Navigate to="/dashboard" replace />;
+  const submit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
+    try {
+      await (isCreating
+        ? createAccount(email, password)
+        : signIn(email, password));
+      nav("/dashboard");
+    } catch (err) {
+      const messages = {
+        "auth/invalid-credential": "Incorrect email or password.",
+        "auth/email-already-in-use":
+          "An account already exists with this email.",
+        "auth/weak-password": "Use a password with at least 6 characters.",
+        "auth/operation-not-allowed":
+          "Enable Email/Password sign-in in Firebase Authentication.",
+      };
+      setError(messages[err.code] || "Unable to continue. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+  return (
+    <div className="login">
+      <div className="login-brand">
+        <span className="brand-mark">W</span>WOLFGRAMM
+      </div>
+      <form className="login-card" onSubmit={submit}>
+        <p className="eyebrow">CLIENT PORTAL</p>
+        <h1>{isCreating ? "Create your account." : "Welcome back."}</h1>
+        <p>
+          {isCreating
+            ? "Set up your secure Wolfgramm portal account."
+            : "Sign in to access your client work and deliverables."}
+        </p>
+        <label>
+          Email address
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            required
+          />
+        </label>
+        <label>
+          Password
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete={isCreating ? "new-password" : "current-password"}
+            minLength="6"
+            required
+          />
+        </label>
+        {error && <p className="form-error">{error}</p>}
+        <button className="primary-button full" disabled={submitting}>
+          {submitting
+            ? "Please wait…"
+            : isCreating
+            ? "Create account"
+            : "Sign in"}
+        </button>
+        <button
+          type="button"
+          className="auth-switch"
+          onClick={() => {
+            setIsCreating(!isCreating);
+            setError("");
+          }}
+        >
+          {isCreating
+            ? "Already have an account? Sign in"
+            : "New here? Create an account"}
+        </button>
+      </form>
+    </div>
+  );
+}
+function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="auth-loading">Loading portal…</div>;
+  return user ? children : <Navigate to="/login" replace />;
+}
+export default function App() {
+  return (
+    <AuthProvider>
+      <PortalDataProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/clients"
+            element={
+              <ProtectedRoute>
+                <Clients />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/clients/:id"
+            element={
+              <ProtectedRoute>
+                <ClientProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/content"
+            element={
+              <ProtectedRoute>
+                <Content />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects"
+            element={
+              <ProtectedRoute>
+                <Projects />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <SettingsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </PortalDataProvider>
+    </AuthProvider>
+  );
+}
