@@ -1,17 +1,29 @@
-import { addDoc, collection, doc, getDocs, onSnapshot, setDoc, serverTimestamp, writeBatch } from 'firebase/firestore'
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, setDoc, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { assets, clients, projects } from '../data/portalData'
 import { db } from './firebase'
 
 const collections = { clients: 'clients', projects: 'projects', assets: 'content' }
 
 export async function seedPortalData() {
+  const metaRef = doc(db, 'portalMeta', 'seed')
+  if ((await getDoc(metaRef)).exists()) return
   const clientSnapshot = await getDocs(collection(db, collections.clients))
-  if (!clientSnapshot.empty) return
+  if (!clientSnapshot.empty) { await setDoc(metaRef, { completed: true }); return }
 
   const batch = writeBatch(db)
   clients.forEach(({ id, ...client }) => batch.set(doc(db, collections.clients, id), client))
   projects.forEach((project) => batch.set(doc(db, collections.projects, project.name.toLowerCase().replaceAll(' ', '-')), project))
   assets.forEach(({ id, ...asset }) => batch.set(doc(db, collections.assets, `asset-${id}`), asset))
+  batch.set(metaRef, { completed: true })
+  await batch.commit()
+}
+
+export async function clearDemoData() {
+  const batch = writeBatch(db)
+  ;['abc-media', 'pacific-creative', 'northstar-events', 'pulse-fitness'].forEach((id) => batch.delete(doc(db, collections.clients, id)))
+  ;['summer-campaign', 'brand-film-2026', 'awards-night-recap'].forEach((id) => batch.delete(doc(db, collections.projects, id)))
+  ;[1, 2, 3, 4, 5, 6].forEach((id) => batch.delete(doc(db, collections.assets, `asset-${id}`)))
+  batch.set(doc(db, 'portalMeta', 'seed'), { completed: true, clearedAt: serverTimestamp() })
   await batch.commit()
 }
 

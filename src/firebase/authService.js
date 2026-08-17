@@ -1,4 +1,4 @@
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth'
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth'
 import { auth, isFirebaseConfigured } from './firebase'
 
 function assertConfigured() {
@@ -14,5 +14,13 @@ export async function signIn(email, password) {
 
 export async function createAccount(email, password) {
   assertConfigured()
-  return createUserWithEmailAndPassword(auth, email, password)
+  const credential = await createUserWithEmailAndPassword(auth, email, password)
+  const displayName = email.split('@')[0].replace(/[._-]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
+  await updateProfile(credential.user, { displayName })
+  return credential
+}
+
+export async function saveProfile(displayName) {
+  assertConfigured()
+  await updateProfile(auth.currentUser, { displayName })
 }
