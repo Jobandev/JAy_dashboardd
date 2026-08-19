@@ -1484,11 +1484,20 @@ function Login() {
     } catch (err) {
       const messages = {
         "auth/invalid-credential": "Incorrect email or password.",
+        "auth/invalid-email": "Enter a valid email address.",
         "auth/email-already-in-use":
           "An account already exists with this email.",
         "auth/weak-password": "Use a password with at least 6 characters.",
         "auth/operation-not-allowed":
-          "Enable Email/Password sign-in in Firebase Authentication.",
+          "Enable Email/Password sign-in in Firebase Console → Authentication → Sign-in method.",
+        "auth/configuration-not-found":
+          "Firebase Authentication is not configured for this project.",
+        "auth/invalid-api-key":
+          "The Firebase API key is invalid. Check the Vercel environment variables.",
+        "auth/network-request-failed":
+          "Network error. Check your internet connection and try again.",
+        "auth/too-many-requests":
+          "Too many attempts. Wait a moment and try again.",
       };
       setError(messages[err.code] || "Unable to continue. Please try again.");
     } finally {
