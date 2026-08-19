@@ -47,8 +47,16 @@ export function updateProject(id, updates) {
   return updateDoc(doc(db, collections.projects, id), updates)
 }
 
+export function deleteProject(id) {
+  return deleteDoc(doc(db, collections.projects, id))
+}
+
 export function createContentLink(content) {
   return addDoc(collection(db, collections.assets), { ...content, date: 'Just now', createdAt: serverTimestamp() })
+}
+
+export function deleteContent(id) {
+  return deleteDoc(doc(db, collections.assets, id))
 }
 
 export function createProject(project) {

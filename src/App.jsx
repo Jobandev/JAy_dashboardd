@@ -54,12 +54,7 @@ function Shell({ children }) {
   const location = useLocation();
   const { user } = useAuth();
   const name = user?.displayName || user?.email?.split("@")[0] || "Portal user";
-  const initials = name
-    .split(" ")
-    .map((word) => word[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const initials = name.charAt(0).toUpperCase();
 
   const showToast = (message, type = "info") => {
     setToast({ message, type });
@@ -192,9 +187,43 @@ function toEmbedUrl(url = "") {
   if (drive) return `https://drive.google.com/file/d/${drive[1]}/preview`;
   return url;
 }
+function getContentThumbnail(asset = {}) {
+  const explicit = asset.thumbnailUrl || asset.previewImage || asset.poster || asset.coverImage || asset.image;
+  if (typeof explicit === "string" && explicit.trim()) return explicit;
+
+  const url = asset.url || asset.externalUrl || "";
+  if (!url) return null;
+
+  if (/\.(png|jpe?g|gif|webp|bmp|svg)(\?.*)?$/i.test(url)) return url;
+
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.replace(/^www\./, "");
+    if (hostname.includes("youtube.com") || hostname.includes("youtu.be")) {
+      const id = parsed.searchParams.get("v") || url.split("/").pop().split("?")[0];
+      return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : null;
+    }
+    if (hostname.includes("vimeo.com")) {
+      const id = url.split("/").filter(Boolean).pop();
+      return id ? `https://vumbnail.com/${id}.jpg` : null;
+    }
+    const drive = url.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+    if (drive) return `https://drive.google.com/thumbnail?id=${drive[1]}&sz=w1000`;
+  } catch {
+    return null;
+  }
+
+  return null;
+}
 function MediaViewer({ asset, close }) {
   const url = asset.url || asset.externalUrl;
   const isVideo = /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const posterUrl = getContentThumbnail(asset);
+  const posterStyle = posterUrl
+    ? { backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.08), rgba(9,9,13,0.7)), url("${posterUrl}")`, backgroundSize: "cover", backgroundPosition: "center" }
+    : {};
+
   return (
     <div className="modal-backdrop media-backdrop">
       <section className="media-viewer">
@@ -203,14 +232,36 @@ function MediaViewer({ asset, close }) {
         </button>
         <div className="media-frame">
           {isVideo ? (
-            <video src={url} controls autoPlay />
+            isPlaying ? (
+              <video
+                src={url}
+                controls
+                autoPlay
+                poster={posterUrl || undefined}
+                onPause={() => setIsPlaying(false)}
+              />
+            ) : (
+              <div className="media-poster" style={posterStyle}>
+                <button className="play-button large" onClick={() => setIsPlaying(true)}>
+                  <Play size={20} fill="currentColor" />
+                </button>
+              </div>
+            )
           ) : (
-            <iframe
-              src={toEmbedUrl(url)}
-              title={asset.title}
-              allow="autoplay; fullscreen"
-              allowFullScreen
-            />
+            isPlaying ? (
+              <iframe
+                src={toEmbedUrl(url)}
+                title={asset.title}
+                allow="autoplay; fullscreen"
+                allowFullScreen
+              />
+            ) : (
+              <div className="media-poster" style={posterStyle}>
+                <button className="play-button large" onClick={() => setIsPlaying(true)}>
+                  <Play size={20} fill="currentColor" />
+                </button>
+              </div>
+            )
           )}
         </div>
         <div>
@@ -227,15 +278,33 @@ function MediaViewer({ asset, close }) {
 }
 function AssetCard({ asset, compact = false }) {
   const [viewing, setViewing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const { deleteContent } = usePortalData();
   const Icon = typeIcon[asset.type] || FileText;
   const contentUrl = asset.url || asset.externalUrl;
-  const imageStyle = asset.url
+  const previewUrl = getContentThumbnail(asset);
+  const imageStyle = previewUrl
     ? {
-        backgroundImage: `linear-gradient(180deg,transparent 35%,#09090d99), url("${asset.url}")`,
+        backgroundImage: `linear-gradient(180deg,transparent 35%,#09090d99), url("${previewUrl}")`,
         backgroundSize: "cover",
         backgroundPosition: "center",
       }
     : { background: asset.image || "linear-gradient(140deg,#5133a0,#171421)" };
+
+  const handleDelete = async (event) => {
+    event.stopPropagation();
+    if (!window.confirm(`Delete "${asset.title}" from the content library?`)) return;
+    setDeleting(true);
+    try {
+      await deleteContent(asset.id);
+    } catch (error) {
+      console.error("Unable to delete asset", error);
+      window.alert("Unable to delete this content item right now.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <>
       <article className={compact ? "asset-card compact" : "asset-card"}>
@@ -260,11 +329,16 @@ function AssetCard({ asset, compact = false }) {
           <p className="asset-description">
             {asset.description || "No description added."}
           </p>
-          {contentUrl && (
-            <button className="asset-open" onClick={() => setViewing(true)}>
-              View in portal <ArrowUpRight size={12} />
+          <div className="asset-actions">
+            {contentUrl && (
+              <button className="asset-open" onClick={() => setViewing(true)}>
+                View in portal <ArrowUpRight size={12} />
+              </button>
+            )}
+            <button className="asset-delete" onClick={handleDelete} disabled={deleting}>
+              {deleting ? "Deleting…" : "Delete"}
             </button>
-          )}
+          </div>
         </div>
       </article>
       {viewing && <MediaViewer asset={asset} close={() => setViewing(false)} />}
@@ -455,7 +529,7 @@ function Activity({ color, title, detail, project }) {
   );
 }
 function ProjectRow({ project: p }) {
-  const { updateProject, clients } = usePortalData();
+  const { updateProject, clients, deleteProject } = usePortalData();
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const [tempProgress, setTempProgress] = useState(p.progress || 0);
@@ -501,6 +575,18 @@ function ProjectRow({ project: p }) {
     const clientObj = clients.find((c) => c.name === p.client);
     const target = clientObj ? `/clients/${clientObj.id}?view=projects` : '/clients';
     navigate(target);
+  };
+
+  const handleDelete = async (e) => {
+    e.stopPropagation();
+    if (!window.confirm(`Delete project "${p.name}"?`)) return;
+    try {
+      await deleteProject(p.id || p.name.toLowerCase().replaceAll(' ', '-'));
+      showToast('Project deleted', 'success');
+    } catch (error) {
+      console.error('Unable to delete project', error);
+      showToast('Unable to delete project', 'error');
+    }
   };
 
   return (
@@ -568,9 +654,14 @@ function ProjectRow({ project: p }) {
         <Clock3 size={15} />
         {p.due}
       </div>
-      <button type="button" className="row-chevron icon-button" onClick={openClient}>
-        <ChevronRight size={19} />
-      </button>
+      <div className="project-actions">
+        <button type="button" className="secondary-button project-delete" onClick={handleDelete}>
+          Delete
+        </button>
+        <button type="button" className="row-chevron icon-button" onClick={openClient}>
+          <ChevronRight size={19} />
+        </button>
+      </div>
     </div>
   );
 }
@@ -1012,13 +1103,40 @@ function Content() {
   const { assets, clients } = usePortalData();
   const location = useLocation();
   const [filter, setFilter] = useState("All content");
+  const [sortNewest, setSortNewest] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
   const [showAddLink, setShowAddLink] = useState(
     location.search.includes("link=1")
   );
   const [viewing, setViewing] = useState(null);
-  const shown =
+  let shown =
     filter === "All content" ? assets : assets.filter((a) => a.type === filter);
-  const featured = assets.find((asset) => asset.type === "Video") || assets[0];
+  
+  // Filter by search query
+  if (searchQuery.trim()) {
+    shown = shown.filter((a) => 
+      a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      a.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      a.client?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }
+  
+  // Sort by date if enabled
+  if (sortNewest) {
+    const dateOrder = { "Today": 0, "Yesterday": 1, "14 Aug": 2, "12 Aug": 3, "10 Aug": 4, "8 Aug": 5 };
+    shown = shown.slice().sort((a, b) => (dateOrder[a.date] ?? 999) - (dateOrder[b.date] ?? 999));
+  }
+  
+  const latestVideos = assets.filter((asset) => asset.type === "Video");
+  const featured = latestVideos.length > 0 ? latestVideos[0] : assets[0];
+  const thumbnailUrl = featured ? getContentThumbnail(featured) : null;
+  const featureStyle = thumbnailUrl
+    ? {
+        backgroundImage: `linear-gradient(135deg, rgba(9,9,13,0.6), rgba(9,9,13,0.8)), url("${thumbnailUrl}")`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }
+    : { background: featured?.image || "linear-gradient(135deg,#5133a0,#171421)" };
   return (
     <Shell>
       <section className="page">
@@ -1034,7 +1152,11 @@ function Content() {
         <div className="content-toolbar">
           <label className="search">
             <Search size={18} />
-            <input placeholder="Search content" />
+            <input 
+              placeholder="Search content" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </label>
           <div className="segmented">
             {["All content", "Video", "Photo", "Document"].map((t) => (
@@ -1050,7 +1172,7 @@ function Content() {
         </div>
         {featured ? (
           <div className="content-feature">
-            <div className="feature-art">
+            <div className="feature-art" style={featureStyle}>
               <span>
                 FEATURED
                 <br />
@@ -1098,8 +1220,8 @@ function Content() {
           <h2>
             All content <span>{shown.length}</span>
           </h2>
-          <button className="filter-button">
-            Newest first <ChevronDown size={16} />
+          <button className="filter-button" onClick={() => setSortNewest(!sortNewest)}>
+            {sortNewest ? "Newest first" : "Oldest first"} <ChevronDown size={16} />
           </button>
         </div>
         <div className="asset-grid">
@@ -1132,6 +1254,7 @@ function AddContentLink({ clients, close }) {
     setSaving(true);
     setError("");
     try {
+      const thumbnailUrl = form.get("thumbnailUrl")?.trim();
       await addContentLink({
         clientId: client.id,
         client: client.name,
@@ -1139,6 +1262,7 @@ function AddContentLink({ clients, close }) {
         description: form.get("description"),
         type: form.get("type"),
         externalUrl: form.get("externalUrl"),
+        thumbnailUrl: thumbnailUrl || getContentThumbnail({ url: form.get("externalUrl") }) || null,
       });
       close();
     } catch (err) {
@@ -1203,6 +1327,14 @@ function AddContentLink({ clients, close }) {
             name="externalUrl"
             type="url"
             required
+            placeholder="https://…"
+          />
+        </label>
+        <label>
+          Thumbnail / cover image URL (optional)
+          <input
+            name="thumbnailUrl"
+            type="url"
             placeholder="https://…"
           />
         </label>
@@ -1334,6 +1466,7 @@ function Login() {
   const nav = useNavigate();
   const { user } = useAuth();
   const [isCreating, setIsCreating] = useState(false);
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -1345,7 +1478,7 @@ function Login() {
     setSubmitting(true);
     try {
       await (isCreating
-        ? createAccount(email, password)
+        ? createAccount(email, password, username)
         : signIn(email, password));
       nav("/dashboard");
     } catch (err) {
@@ -1375,6 +1508,18 @@ function Login() {
             ? "Set up your secure Wolfgramm portal account."
             : "Sign in to access your client work and deliverables."}
         </p>
+        {isCreating && (
+          <label>
+            Username
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              autoComplete="name"
+              required
+            />
+          </label>
+        )}
         <label>
           Email address
           <input

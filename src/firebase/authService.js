@@ -12,11 +12,10 @@ export async function signIn(email, password) {
   return signInWithEmailAndPassword(auth, email, password)
 }
 
-export async function createAccount(email, password) {
+export async function createAccount(email, password, username) {
   assertConfigured()
   const credential = await createUserWithEmailAndPassword(auth, email, password)
-  const displayName = email.split('@')[0].replace(/[._-]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
-  await updateProfile(credential.user, { displayName })
+  await updateProfile(credential.user, { displayName: username.trim() })
   return credential
 }
 
