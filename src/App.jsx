@@ -33,7 +33,7 @@ import {
   X,
 } from "lucide-react";
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
-import { createAccount, saveProfile, signIn, signOutUser } from "./firebase/authService";
+import { createAccount, resetPassword, saveProfile, signIn, signOutUser } from "./firebase/authService";
 import { PortalDataProvider, usePortalData } from "./data/PortalDataProvider";
 
 const nav = [
@@ -770,6 +770,28 @@ function AddClient({ close }) {
       setError("Unable to save this client. Please try again.");
     } finally {
       setSaving(false);
+    }
+  };
+  const forgotPassword = async () => {
+    if (!email) {
+      setError("Enter your email address first.");
+      return;
+    }
+    setError("");
+    setSubmitting(true);
+    try {
+      await resetPassword(email);
+      setError("Password reset email sent. Check your inbox.");
+    } catch (err) {
+      const messages = {
+        "auth/invalid-email": "Enter a valid email address.",
+        "auth/user-not-found": "No account was found with this email.",
+        "auth/too-many-requests": "Too many attempts. Wait a moment and try again.",
+      };
+      console.error("Unable to reset password", err);
+      setError(messages[err?.code] || "Unable to send the reset email. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
   };
   return (
@@ -1586,6 +1608,11 @@ function Login() {
             ? "Create account"
             : "Sign in"}
         </button>
+        {!isCreating && (
+          <button type="button" className="auth-switch" onClick={forgotPassword} disabled={submitting}>
+            Forgot password?
+          </button>
+        )}
         <button
           type="button"
           className="auth-switch"
