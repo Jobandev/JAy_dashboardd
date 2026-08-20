@@ -33,7 +33,7 @@ import {
   X,
 } from "lucide-react";
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
-import { createAccount, saveProfile, signIn } from "./firebase/authService";
+import { createAccount, saveProfile, signIn, signOutUser } from "./firebase/authService";
 import { PortalDataProvider, usePortalData } from "./data/PortalDataProvider";
 
 const nav = [
@@ -1415,7 +1415,7 @@ function AddProject({ clients, users, close, defaultClientId }) {
   </form></div>;
 }
 function SettingsPage() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const { clearDemoData } = usePortalData();
   const [name, setName] = useState(
     user?.displayName || user?.email?.split("@")[0] || ""
@@ -1434,6 +1434,9 @@ function SettingsPage() {
       return;
     await clearDemoData();
     setMessage("Sample data removed.");
+  };
+  const signOutAccount = async () => {
+    await signOutUser();
   };
   return (
     <Shell>
@@ -1458,7 +1461,10 @@ function SettingsPage() {
             Save changes
           </PrimaryButton>
           {message && <p className="settings-message">{message}</p>}
-          <div className="danger-zone">
+          <button className="secondary-button settings-signout" onClick={signOutAccount}>
+            Sign out
+          </button>
+          {role === "administrator" && <div className="danger-zone">
             <p className="eyebrow">DEMO DATA</p>
             <h3>Remove sample content</h3>
             <p>
@@ -1468,7 +1474,7 @@ function SettingsPage() {
             <button className="danger-button" onClick={removeDemo}>
               Remove demo data
             </button>
-          </div>
+          </div>}
         </section>
       </section>
     </Shell>

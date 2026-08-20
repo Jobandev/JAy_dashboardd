@@ -1,4 +1,4 @@
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth'
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile } from 'firebase/auth'
 import { auth, isFirebaseConfigured } from './firebase'
 
 function assertConfigured() {
@@ -10,6 +10,11 @@ function assertConfigured() {
 export async function signIn(email, password) {
   assertConfigured()
   return signInWithEmailAndPassword(auth, email, password)
+}
+
+export async function signOutUser() {
+  assertConfigured()
+  return signOut(auth)
 }
 
 export async function createAccount(email, password, username) {
