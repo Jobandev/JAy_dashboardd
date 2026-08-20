@@ -2,7 +2,7 @@ import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, setDoc
 import { assets, clients, projects } from '../data/portalData'
 import { db } from './firebase'
 
-const collections = { clients: 'clients', projects: 'projects', assets: 'content', activities: 'activities' }
+const collections = { clients: 'clients', projects: 'projects', assets: 'content', activities: 'activities', users: 'users' }
 
 export async function seedPortalData() {
   const metaRef = doc(db, 'portalMeta', 'seed')

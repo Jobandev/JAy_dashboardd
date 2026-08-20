@@ -349,7 +349,10 @@ function AssetCard({ asset, compact = false }) {
 
 function Dashboard() {
   const { clients, assets, projects, activities, addActivity } = usePortalData();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const visibleProjects = role === "administrator"
+    ? projects
+    : projects.filter((project) => project.assignedTo === user?.email);
   const navigate = useNavigate();
   const [showAddActivity, setShowAddActivity] = useState(false);
   const displayName = user?.displayName || user?.email?.split("@")[0] || "there";
@@ -375,7 +378,7 @@ function Dashboard() {
           <Stat
             icon={FolderKanban}
             label="Live projects"
-            value={projects.length}
+            value={visibleProjects.length}
             change="Production pipeline"
           />
           <Stat
@@ -446,7 +449,7 @@ function Dashboard() {
               View all <ArrowUpRight size={15} />
             </NavLink>
           </div>
-          {projects.map((p) => (
+          {visibleProjects.map((p) => (
             <ProjectRow key={p.id || p.name} project={p} />
           ))}
         </section>
@@ -531,6 +534,7 @@ function Activity({ color, title, detail, project }) {
 }
 function ProjectRow({ project: p }) {
   const { updateProject, clients, deleteProject } = usePortalData();
+  const { role } = useAuth();
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const [tempProgress, setTempProgress] = useState(p.progress || 0);
@@ -598,7 +602,7 @@ function ProjectRow({ project: p }) {
         </span>
         <div>
           <b>{p.name}</b>
-          <p>{p.client}</p>
+          <p>{p.client}{p.assignedToName && <> · {p.assignedToName}</>}</p>
         </div>
       </div>
       <span className={"status " + p.status.toLowerCase().replaceAll(" ", "-")}>
@@ -656,9 +660,9 @@ function ProjectRow({ project: p }) {
         {p.due}
       </div>
       <div className="project-actions">
-        <button type="button" className="secondary-button project-delete" onClick={handleDelete}>
+        {role === "administrator" && <button type="button" className="secondary-button project-delete" onClick={handleDelete}>
           Delete
-        </button>
+        </button>}
         <button type="button" className="row-chevron icon-button" onClick={openClient}>
           <ChevronRight size={19} />
         </button>
@@ -996,7 +1000,7 @@ function AddActivity({ projects, addActivity, close, user }) {
 
 function ClientProfile() {
   const { id } = useParams();
-  const { clients, projects, assets } = usePortalData();
+  const { clients, projects, assets, users } = usePortalData();
   const location = useLocation();
   const [showEdit, setShowEdit] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
@@ -1094,7 +1098,7 @@ function ClientProfile() {
           </div>
         </section>
         {showEdit && <EditClient client={client} close={() => setShowEdit(false)} />}
-        {showCreate && <AddProject clients={clients} defaultClientId={client.id} close={() => setShowCreate(false)} />}
+        {showCreate && <AddProject clients={clients} users={users} defaultClientId={client.id} close={() => setShowCreate(false)} />}
       </section>
     </Shell>
   );
@@ -1353,7 +1357,11 @@ function AddContentLink({ clients, close }) {
   );
 }
 function Projects() {
-  const { projects, clients } = usePortalData();
+  const { projects, clients, users } = usePortalData();
+  const { user, role } = useAuth();
+  const visibleProjects = role === "administrator"
+    ? projects
+    : projects.filter((project) => project.assignedTo === user?.email);
   const [showCreate, setShowCreate] = useState(false);
   return (
     <Shell>
@@ -1363,19 +1371,19 @@ function Projects() {
           title="Projects"
           description="Track progress from first idea to final delivery."
         >
-          <PrimaryButton onClick={() => setShowCreate(true)}>New project</PrimaryButton>
+          {role === "administrator" && <PrimaryButton onClick={() => setShowCreate(true)}>New project</PrimaryButton>}
         </PageHeader>
         <section className="panel projects-panel">
-          {projects.map((p) => (
+          {visibleProjects.map((p) => (
             <ProjectRow key={p.id || p.name} project={p} />
           ))}
         </section>
       </section>
-      {showCreate && <AddProject clients={clients} close={() => setShowCreate(false)} />}
+      {showCreate && <AddProject clients={clients} users={users} close={() => setShowCreate(false)} />}
     </Shell>
   );
 }
-function AddProject({ clients, close, defaultClientId }) {
+function AddProject({ clients, users, close, defaultClientId }) {
   const { addProject } = usePortalData();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -1384,9 +1392,11 @@ function AddProject({ clients, close, defaultClientId }) {
     const form = new FormData(event.currentTarget);
     const client = clients.find((item) => item.id === form.get("clientId"));
     if (!client) { setError("Choose a client."); return; }
+    const assignee = users.find((item) => item.id === form.get("assignedTo"));
+    if (!assignee) { setError("Choose an employee."); return; }
     setSaving(true); setError("");
     try {
-      await addProject({ name: form.get("name"), client: client.name, status: form.get("status"), due: form.get("due") || "No due date" });
+      await addProject({ name: form.get("name"), client: client.name, status: form.get("status"), due: form.get("due") || "No due date", assignedTo: assignee.email, assignedToName: assignee.displayName || assignee.email });
       close();
     } catch (err) {
       console.error(err); setError("Unable to create the project. Please try again.");
@@ -1397,6 +1407,7 @@ function AddProject({ clients, close, defaultClientId }) {
     <p className="eyebrow">PRODUCTION PIPELINE</p><h2>New project</h2><p className="description">Create a project and assign it to a client.</p>
     <label>Project name<input name="name" required placeholder="e.g. Autumn campaign"/></label>
     <label>Client<select name="clientId" required defaultValue={defaultClientId || ""}><option value="" disabled>Select a client</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}</select></label>
+    <label>Assign employee<select name="assignedTo" required defaultValue=""><option value="" disabled>Select an employee</option>{users.filter((item) => item.role !== "administrator").map((employee) => <option key={employee.id} value={employee.id}>{employee.displayName || employee.email}</option>)}</select></label>
     <label>Status<select name="status" defaultValue="Pre-production"><option>Pre-production</option><option>In production</option><option>Review</option></select></label>
     <label>Due date<input name="due" type="date"/></label>
     {error && <p className="form-error">{error}</p>}

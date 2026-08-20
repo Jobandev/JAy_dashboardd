@@ -3,7 +3,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { isFirebaseConfigured } from '../firebase/firebase'
 import { clearDemoData, createClient, updateClient, updateProject, createContentLink, createProject, createActivity, deleteProject, deleteContent, seedPortalData, subscribeToCollection } from '../firebase/portalService'
 
-const PortalDataContext = createContext({ clients: [], projects: [], assets: [], loading: true, addClient: async () => {}, addContentLink: async () => {}, deleteProject: async () => {}, deleteContent: async () => {} })
+const PortalDataContext = createContext({ clients: [], projects: [], assets: [], users: [], loading: true, addClient: async () => {}, addContentLink: async () => {}, deleteProject: async () => {}, deleteContent: async () => {} })
 
 export function PortalDataProvider({ children }) {
   const { user } = useAuth()
@@ -11,11 +11,12 @@ export function PortalDataProvider({ children }) {
   const [projects, setProjects] = useState([])
   const [assets, setAssets] = useState([])
   const [activities, setActivities] = useState([])
+  const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!user || !isFirebaseConfigured) {
-      setClients([]); setProjects([]); setAssets([]); setLoading(false)
+      setClients([]); setProjects([]); setAssets([]); setUsers([]); setLoading(false)
       return undefined
     }
 
@@ -34,10 +35,11 @@ export function PortalDataProvider({ children }) {
     const stopProjects = subscribeToCollection('projects', setProjects)
     const stopAssets = subscribeToCollection('assets', setAssets)
     const stopActivities = subscribeToCollection('activities', setActivities)
-    return () => { active = false; stopClients(); stopProjects(); stopAssets(); stopActivities() }
+    const stopUsers = subscribeToCollection('users', setUsers)
+    return () => { active = false; stopClients(); stopProjects(); stopAssets(); stopActivities(); stopUsers() }
   }, [user])
 
-  const value = useMemo(() => ({ clients, projects, assets, activities, loading, addClient: createClient, updateClient: updateClient, updateProject: updateProject, addContentLink: createContentLink, addProject: createProject, addActivity: createActivity, deleteProject, deleteContent, clearDemoData }), [clients, projects, assets, activities, loading])
+  const value = useMemo(() => ({ clients, projects, assets, activities, users, loading, addClient: createClient, updateClient: updateClient, updateProject: updateProject, addContentLink: createContentLink, addProject: createProject, addActivity: createActivity, deleteProject, deleteContent, clearDemoData }), [clients, projects, assets, activities, users, loading])
   return <PortalDataContext.Provider value={value}>{children}</PortalDataContext.Provider>
 }
 
