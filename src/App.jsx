@@ -38,7 +38,7 @@ import { PortalDataProvider, usePortalData } from "./data/PortalDataProvider";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/clients", label: "Clients", icon: Users },
+  { to: "/clients", label: "Clients", icon: Users, administratorOnly: true },
   { to: "/content", label: "Content library", icon: Film },
   { to: "/projects", label: "Projects", icon: FolderKanban },
 ];
@@ -52,7 +52,7 @@ function Shell({ children }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [toast, setToast] = useState(null);
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const name = user?.displayName || user?.email?.split("@")[0] || "Portal user";
   const initials = name.charAt(0).toUpperCase();
 
@@ -74,7 +74,7 @@ function Shell({ children }) {
             </button>
           </div>
           <nav>
-            {nav.map(({ to, label, icon: Icon }) => (
+            {nav.filter((item) => !item.administratorOnly || role === "administrator").map(({ to, label, icon: Icon }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -101,6 +101,7 @@ function Shell({ children }) {
               <div>
                 <b>{name}</b>
                 <span>{user?.email}</span>
+                <span>{role === "administrator" ? "Administrator" : "Employee"}</span>
               </div>
             </div>
           </div>
@@ -1482,6 +1483,11 @@ function Login() {
         : signIn(email, password));
       nav("/dashboard");
     } catch (err) {
+      console.error("Authentication failed", {
+        code: err?.code,
+        message: err?.message,
+        error: err,
+      });
       const messages = {
         "auth/invalid-credential": "Incorrect email or password.",
         "auth/invalid-email": "Enter a valid email address.",
@@ -1499,7 +1505,12 @@ function Login() {
         "auth/too-many-requests":
           "Too many attempts. Wait a moment and try again.",
       };
-      setError(messages[err.code] || "Unable to continue. Please try again.");
+      setError(
+        messages[err?.code] ||
+          `Authentication failed${err?.code ? ` (${err.code})` : ""}. ${
+            err?.message || "Check the browser console for details."
+          }`,
+      );
     } finally {
       setSubmitting(false);
     }
@@ -1579,6 +1590,12 @@ function ProtectedRoute({ children }) {
   if (loading) return <div className="auth-loading">Loading portal…</div>;
   return user ? children : <Navigate to="/login" replace />;
 }
+function AdministratorRoute({ children }) {
+  const { user, role, loading } = useAuth();
+  if (loading) return <div className="auth-loading">Loading portal…</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  return role === "administrator" ? children : <Navigate to="/dashboard" replace />;
+}
 export default function App() {
   return (
     <AuthProvider>
@@ -1596,17 +1613,17 @@ export default function App() {
           <Route
             path="/clients"
             element={
-              <ProtectedRoute>
+              <AdministratorRoute>
                 <Clients />
-              </ProtectedRoute>
+              </AdministratorRoute>
             }
           />
           <Route
             path="/clients/:id"
             element={
-              <ProtectedRoute>
+              <AdministratorRoute>
                 <ClientProfile />
-              </ProtectedRoute>
+              </AdministratorRoute>
             }
           />
           <Route
