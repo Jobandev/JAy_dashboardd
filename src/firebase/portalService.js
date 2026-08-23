@@ -1,4 +1,4 @@
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, setDoc, updateDoc, serverTimestamp, writeBatch } from 'firebase/firestore'
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, query, setDoc, updateDoc, where, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { assets, clients, projects } from '../data/portalData'
 import { db } from './firebase'
 
@@ -18,11 +18,12 @@ export async function seedPortalData() {
   await batch.commit()
 }
 
+// Deletes only the starter seed data (the current real client list plus its
+// starter projects), leaving anything added by hand untouched.
 export async function clearDemoData() {
   const batch = writeBatch(db)
-  ;['abc-media', 'pacific-creative', 'northstar-events', 'pulse-fitness'].forEach((id) => batch.delete(doc(db, collections.clients, id)))
-  ;['summer-campaign', 'brand-film-2026', 'awards-night-recap'].forEach((id) => batch.delete(doc(db, collections.projects, id)))
-  ;[1, 2, 3, 4, 5, 6].forEach((id) => batch.delete(doc(db, collections.assets, `asset-${id}`)))
+  clients.forEach(({ id }) => batch.delete(doc(db, collections.clients, id)))
+  projects.forEach((project) => batch.delete(doc(db, collections.projects, project.name.toLowerCase().replaceAll(' ', '-'))))
   batch.set(doc(db, 'portalMeta', 'seed'), { completed: true, clearedAt: serverTimestamp() })
   await batch.commit()
 }
@@ -30,6 +31,25 @@ export async function clearDemoData() {
 export function subscribeToCollection(name, onChange) {
   return onSnapshot(collection(db, collections[name]), (snapshot) => {
     onChange(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() })))
+  })
+}
+
+// Same as subscribeToCollection but scoped to a single clientId. Used for
+// client-role accounts so their browser only ever fetches documents
+// belonging to their own organisation, rather than the whole collection
+// filtered client-side. This needs a matching Firestore security rule
+// (see firestore.rules) to actually be enforced server-side — the query
+// filter alone is a convenience, not a security boundary.
+export function subscribeToClientScopedCollection(name, clientId, onChange) {
+  const scoped = query(collection(db, collections[name]), where('clientId', '==', clientId))
+  return onSnapshot(scoped, (snapshot) => {
+    onChange(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() })))
+  })
+}
+
+export function subscribeToClientDoc(clientId, onChange) {
+  return onSnapshot(doc(db, collections.clients, clientId), (snapshot) => {
+    onChange(snapshot.exists() ? [{ id: snapshot.id, ...snapshot.data() }] : [])
   })
 }
 
