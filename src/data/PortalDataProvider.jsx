@@ -1,12 +1,26 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { isFirebaseConfigured } from '../firebase/firebase'
-import { clearDemoData, createClient, updateClient, updateProject, createContentLink, createProject, createActivity, deleteProject, deleteContent, seedPortalData, subscribeToCollection } from '../firebase/portalService'
+import {
+  clearDemoData,
+  createClient,
+  updateClient,
+  updateProject,
+  createContentLink,
+  createProject,
+  createActivity,
+  deleteProject,
+  deleteContent,
+  seedPortalData,
+  subscribeToCollection,
+  subscribeToClientScopedCollection,
+  subscribeToClientDoc,
+} from '../firebase/portalService'
 
 const PortalDataContext = createContext({ clients: [], projects: [], assets: [], users: [], loading: true, addClient: async () => {}, addContentLink: async () => {}, deleteProject: async () => {}, deleteContent: async () => {} })
 
 export function PortalDataProvider({ children }) {
-  const { user } = useAuth()
+  const { user, role, clientId } = useAuth()
   const [clients, setClients] = useState([])
   const [projects, setProjects] = useState([])
   const [assets, setAssets] = useState([])
@@ -18,6 +32,20 @@ export function PortalDataProvider({ children }) {
     if (!user || !isFirebaseConfigured) {
       setClients([]); setProjects([]); setAssets([]); setUsers([]); setLoading(false)
       return undefined
+    }
+
+    // Client-role accounts only ever query documents scoped to their own
+    // clientId — they never subscribe to the full clients/projects/content
+    // collections. Pair this with matching Firestore security rules so the
+    // restriction is enforced server-side too, not just in this UI.
+    if (role === 'client' && clientId) {
+      setLoading(false)
+      const stopClient = subscribeToClientDoc(clientId, setClients)
+      const stopProjects = subscribeToClientScopedCollection('projects', clientId, setProjects)
+      const stopAssets = subscribeToClientScopedCollection('assets', clientId, setAssets)
+      setActivities([])
+      setUsers([])
+      return () => { stopClient(); stopProjects(); stopAssets() }
     }
 
     let active = true
@@ -37,7 +65,7 @@ export function PortalDataProvider({ children }) {
     const stopActivities = subscribeToCollection('activities', setActivities)
     const stopUsers = subscribeToCollection('users', setUsers)
     return () => { active = false; stopClients(); stopProjects(); stopAssets(); stopActivities(); stopUsers() }
-  }, [user])
+  }, [user, role, clientId])
 
   const value = useMemo(() => ({ clients, projects, assets, activities, users, loading, addClient: createClient, updateClient: updateClient, updateProject: updateProject, addContentLink: createContentLink, addProject: createProject, addActivity: createActivity, deleteProject, deleteContent, clearDemoData }), [clients, projects, assets, activities, users, loading])
   return <PortalDataContext.Provider value={value}>{children}</PortalDataContext.Provider>

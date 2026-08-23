@@ -3,11 +3,20 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { auth, db, isFirebaseConfigured } from '../firebase/firebase'
 
-const AuthContext = createContext({ user: null, role: 'employee', loading: true })
+// role is one of:
+//   'administrator' — full access to every client (Jay)
+//   'employee'      — full access to every client (internal team)
+//   'client'        — scoped to a single organisation via clientId
+// clientId is only meaningful when role === 'client'. It is not set
+// automatically anywhere yet — an administrator assigns it by hand on the
+// user's Firestore profile document (users/{uid}.clientId) until a proper
+// invite/assignment UI exists.
+const AuthContext = createContext({ user: null, role: 'employee', clientId: null, loading: true })
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [role, setRole] = useState('employee')
+  const [clientId, setClientId] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -20,6 +29,7 @@ export function AuthProvider({ children }) {
       setUser(nextUser)
       if (!nextUser || !db) {
         setRole('employee')
+        setClientId(null)
         setLoading(false)
         return
       }
@@ -27,7 +37,10 @@ export function AuthProvider({ children }) {
       const profileRef = doc(db, 'users', nextUser.uid)
       const profile = await getDoc(profileRef)
       if (profile.exists()) {
-        setRole(profile.data().role === 'administrator' ? 'administrator' : 'employee')
+        const data = profile.data()
+        const nextRole = ['administrator', 'client'].includes(data.role) ? data.role : 'employee'
+        setRole(nextRole)
+        setClientId(nextRole === 'client' ? data.clientId || null : null)
       } else {
         const adminEmail = import.meta.env.VITE_ADMIN_EMAIL?.trim().toLowerCase()
         const nextRole = adminEmail && nextUser.email?.toLowerCase() === adminEmail
@@ -37,14 +50,16 @@ export function AuthProvider({ children }) {
           email: nextUser.email || '',
           displayName: nextUser.displayName || '',
           role: nextRole,
+          clientId: null,
         })
         setRole(nextRole)
+        setClientId(null)
       }
       setLoading(false)
     })
   }, [])
 
-  const value = useMemo(() => ({ user, role, loading }), [user, role, loading])
+  const value = useMemo(() => ({ user, role, clientId, loading }), [user, role, clientId, loading])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
