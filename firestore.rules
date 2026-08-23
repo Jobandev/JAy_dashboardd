@@ -1,0 +1,66 @@
+rules_version = '2';
+
+// DRAFT — not yet deployed. This sketches the access model the app's data
+// layer already assumes (see PortalDataProvider.jsx / portalService.js) so
+// that client-role accounts are actually restricted server-side, not just
+// hidden in the UI. Review and deploy via `firebase deploy --only firestore:rules`
+// once real client-role accounts are being provisioned.
+//
+// Roles live on users/{uid}: { role: 'administrator' | 'employee' | 'client', clientId }
+// clients/projects/content documents carry a clientId field identifying
+// which organisation they belong to.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function profile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isStaff() {
+      return signedIn() && profile().role in ['administrator', 'employee'];
+    }
+
+    function isAdmin() {
+      return signedIn() && profile().role == 'administrator';
+    }
+
+    function isOwnClient(clientId) {
+      return signedIn() && profile().role == 'client' && profile().clientId == clientId;
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isStaff());
+      // Only an admin can change someone's role/clientId assignment.
+      allow create: if signedIn() && request.auth.uid == uid;
+      allow update: if isAdmin() || (signedIn() && request.auth.uid == uid && request.resource.data.role == resource.data.role);
+    }
+
+    match /clients/{clientId} {
+      allow read: if isStaff() || isOwnClient(clientId);
+      allow write: if isStaff();
+    }
+
+    match /projects/{projectId} {
+      allow read: if isStaff() || isOwnClient(resource.data.clientId);
+      allow write: if isStaff();
+    }
+
+    match /content/{contentId} {
+      allow read: if isStaff() || isOwnClient(resource.data.clientId);
+      allow write: if isStaff();
+    }
+
+    match /activities/{activityId} {
+      allow read, write: if isStaff();
+    }
+
+    match /portalMeta/{docId} {
+      allow read, write: if isStaff();
+    }
+  }
+}
