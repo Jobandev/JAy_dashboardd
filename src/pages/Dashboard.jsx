@@ -123,3 +123,18 @@ export function Dashboard() {
     </Shell>
   );
 }
+
+export function Stat({ icon: Icon, label, value, change }) {
+  return (
+    <div className="stat-card">
+      <div className="stat-icon">
+        <Icon size={18} />
+      </div>
+      <div>
+        <p>{label}</p>
+        <h2>{value}</h2>
+        <span>{change}</span>
+      </div>
+    </div>
+  );
+}
