@@ -246,8 +246,10 @@ export function ProjectRow({ project: p }) {
         <div className="progress-header">
           <span>Progress</span>
 
-          {editing ? (
+          {editing && role === "administrator" ? (
             <b>{tempProgress}%</b>
+          ) : role !== "administrator" ? (
+            <b>{displayedProgress}%</b>
           ) : (
             <button
               type="button"
@@ -264,7 +266,16 @@ export function ProjectRow({ project: p }) {
           )}
         </div>
 
-        {!editing ? (
+        {role !== "administrator" ? (
+          <div className="progress-bar-button" aria-hidden="true">
+            <span
+              className="progress-fill"
+              style={{
+                width: `${displayedProgress}%`,
+              }}
+            />
+          </div>
+        ) : !editing ? (
           <button
             type="button"
             className="progress-bar-button"
