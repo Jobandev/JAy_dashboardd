@@ -1,6 +1,6 @@
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
-import { db, storage } from './firebase'
+import { db, isStorageConfigured, storage } from './firebase'
 
 const fileNameSafe = (name) => name.replace(/[^a-zA-Z0-9._-]/g, '-')
 
@@ -24,6 +24,9 @@ export async function uploadContent({ file, clientId, client, title, type, descr
 }
 
 export async function uploadProfilePhoto(file, uid) {
+  if (!isStorageConfigured || !storage) {
+    throw new Error('Firebase Storage has not been configured. Add VITE_FIREBASE_STORAGE_BUCKET to upload profile photos.')
+  }
   const fileRef = ref(storage, `avatars/${uid}/${Date.now()}-${fileNameSafe(file.name)}`)
   await uploadBytes(fileRef, file)
   return getDownloadURL(fileRef)

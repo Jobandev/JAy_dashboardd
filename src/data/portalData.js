@@ -5,8 +5,8 @@
 // for organisations still waiting on confirmation.
 
 const palette = [
-  '#d7a24e', '#5b9cda', '#a67dda', '#d56868', '#4fb37c',
-  '#e08a3c', '#6a8fd8', '#c25fa8', '#3fb0a8', '#b98a45',
+  '#c96a62', '#5b8da7', '#bd7b72', '#a85b59', '#5d967d',
+  '#bd805c', '#718fa5', '#b56c72', '#5b9c99', '#a7835d',
 ]
 
 const initialsFor = (name) =>

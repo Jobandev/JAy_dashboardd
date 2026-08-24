@@ -14,6 +14,7 @@ const firebaseConfig = {
 }
 
 export const isFirebaseConfigured = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId)
+export const isStorageConfigured = Boolean(isFirebaseConfigured && firebaseConfig.storageBucket)
 
 const app = isFirebaseConfigured ? initializeApp(firebaseConfig) : null
 export const auth = app ? getAuth(app) : null

@@ -12,9 +12,9 @@ export function PageHeader({ eyebrow, title, description, children }) {
     </div>
   );
 }
-export function PrimaryButton({ children, onClick, icon: Icon = Plus }) {
+export function PrimaryButton({ children, onClick, icon: Icon = Plus, disabled = false, type }) {
   return (
-    <button className="primary-button" onClick={onClick}>
+    <button className="primary-button" onClick={onClick} disabled={disabled} type={type}>
       <Icon size={17} />
       {children}
     </button>

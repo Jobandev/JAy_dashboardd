@@ -46,15 +46,17 @@ export function Clients() {
             <span />
           </div>
           {filtered.map((c) => (
-            <NavLink className="client-row" to={"/clients/" + c.id} key={c.id}>
+            <div className="client-row" key={c.id}>
               <div className="client-name">
                 <span
                   className="client-avatar"
-                  style={{ background: c.color || "#8457ec" }}
+                  style={{ background: "#bd6b66" }}
                 >
                   {c.initials}
                 </span>
-                <b>{c.name}</b>
+                <NavLink className="client-name-link" to={`/clients/${c.id}`}>
+                  <b>{c.name}</b>
+                </NavLink>
               </div>
               <div className="contact">
                 <b>{c.contact}</b>
@@ -67,8 +69,10 @@ export function Clients() {
               </span>
               <span className="muted">{c.lastActivity}</span>
               <NavLink to={`/clients/${c.id}?view=projects`} className="text-link small">View projects</NavLink>
-              <ChevronRight size={18} />
-            </NavLink>
+              <NavLink to={`/clients/${c.id}`} className="row-chevron icon-button" aria-label={`View ${c.name}`}>
+                <ChevronRight size={18} />
+              </NavLink>
+            </div>
           ))}
         </div>
       </section>
@@ -98,7 +102,7 @@ export function AddClient({ close }) {
           .join("")
           .slice(0, 2)
           .toUpperCase(),
-        color: "#8457ec",
+        color: "#bd6b66",
       });
       close();
     } catch {
@@ -214,7 +218,7 @@ export function EditClient({ client, close }) {
         </label>
         <label>
           Colour
-          <input name="color" defaultValue={client.color} placeholder="#8457ec" />
+          <input name="color" defaultValue={client.color} placeholder="#bd6b66" />
         </label>
         {error && <p className="form-error">{error}</p>}
         <div className="modal-actions">
@@ -227,4 +231,3 @@ export function EditClient({ client, close }) {
     </div>
   );
 }
-
