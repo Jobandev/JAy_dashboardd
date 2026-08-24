@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./auth/AuthProvider";
 import { PortalDataProvider } from "./data/PortalDataProvider";
+import { ToastProvider } from "./lib/ToastContext";
 import { ProtectedRoute, AdministratorRoute, ClientDetailRoute } from "./routes/guards";
 import { Login } from "./pages/Login";
 import { Dashboard } from "./pages/Dashboard";
@@ -14,7 +15,8 @@ export default function App() {
   return (
     <AuthProvider>
       <PortalDataProvider>
-        <Routes>
+        <ToastProvider>
+          <Routes>
           <Route path="/login" element={<Login />} />
           <Route
             path="/dashboard"
@@ -65,7 +67,8 @@ export default function App() {
             }
           />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
+          </Routes>
+        </ToastProvider>
       </PortalDataProvider>
     </AuthProvider>
   );

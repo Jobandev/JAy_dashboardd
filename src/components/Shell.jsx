@@ -11,7 +11,6 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
-import { ToastContext } from "../lib/ToastContext";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -22,7 +21,6 @@ const nav = [
 
 export function Shell({ children }) {
   const [open, setOpen] = useState(false);
-  const [toast, setToast] = useState(null);
   const location = useLocation();
   const { user, role, clientId } = useAuth();
   const name = user?.displayName || user?.email?.split("@")[0] || "Portal user";
@@ -33,15 +31,8 @@ export function Shell({ children }) {
         .map((item) => (item.to === "/dashboard" ? { ...item, to: `/clients/${clientId}`, label: "My organisation" } : item))
     : nav.filter((item) => !item.administratorOnly || role === "administrator");
 
-  const showToast = (message, type = "info") => {
-    setToast({ message, type });
-    // auto-dismiss
-    setTimeout(() => setToast(null), 3000);
-  };
-
   return (
-    <ToastContext.Provider value={{ showToast }}>
-      <div className="app-shell">
+    <div className="app-shell">
         <aside className={open ? "sidebar is-open" : "sidebar"}>
           <div className="brand">
             <span className="brand-mark">E</span>
@@ -105,15 +96,8 @@ export function Shell({ children }) {
           </header>
 
           {children}
-
-          {toast && (
-            <div className={`toast ${toast.type}`} style={{ position: 'fixed', right: 20, bottom: 20, zIndex: 60 }}>
-              {toast.message}
-            </div>
-          )}
         </main>
       </div>
-    </ToastContext.Provider>
   );
 }
 
