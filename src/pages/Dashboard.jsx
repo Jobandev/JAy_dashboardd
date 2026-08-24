@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { NavLink, Navigate, useNavigate } from "react-router-dom";
-import { ArrowUpRight, FolderKanban, Film, Users } from "lucide-react";
+import { ArrowUpRight, FolderKanban, Film, Pencil, Trash2, Users } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { usePortalData } from "../data/PortalDataProvider";
 import { Shell } from "../components/Shell";
@@ -8,6 +8,7 @@ import { PageHeader, PrimaryButton } from "../components/ui";
 import { AssetCard } from "../components/AssetCard";
 import { ProjectRow } from "../components/ProjectRow";
 import { AddActivity } from "./Projects";
+import { ToastContext } from "../lib/ToastContext";
 
 export function Dashboard() {
   const { clients, assets, projects, activities, addActivity } = usePortalData();
@@ -87,14 +88,7 @@ export function Dashboard() {
                   .slice()
                   .sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
                   .map((act) => (
-                    <article key={act.id} className="activity-item">
-                      <span className="dot purple" />
-                      <div>
-                        <b>{act.title || 'Note'}</b>
-                        <p className="muted">{act.message}</p>
-                        <p className="muted small">{act.author || act.by} · {act.createdAt ? new Date((act.createdAt.seconds||0)*1000).toLocaleString() : ''}</p>
-                      </div>
-                    </article>
+                    <ActivityItem key={act.id} activity={act} currentUser={user} />
                   ))
               ) : (
                 <div className="empty-activity">
@@ -136,5 +130,81 @@ export function Stat({ icon: Icon, label, value, change }) {
         <span>{change}</span>
       </div>
     </div>
+  );
+}
+
+function ActivityItem({ activity: act, currentUser }) {
+  const { updateActivity, deleteActivity } = usePortalData();
+  const { role } = useAuth();
+  const { showToast } = useContext(ToastContext);
+  const canManage = role === "administrator" || role === "employee" || act.author === (currentUser?.displayName || currentUser?.email);
+  const [editing, setEditing] = useState(false);
+  const [title, setTitle] = useState(act.title || "");
+  const [message, setMessage] = useState(act.message || "");
+  const [saving, setSaving] = useState(false);
+
+  const save = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await updateActivity(act.id, { title, message });
+      setEditing(false);
+      showToast("Note updated", "success");
+    } catch (err) {
+      console.error("Unable to update note", err);
+      showToast("Unable to update note", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const remove = async () => {
+    if (!window.confirm("Delete this note?")) return;
+    try {
+      await deleteActivity(act.id);
+      showToast("Note deleted", "success");
+    } catch (err) {
+      console.error("Unable to delete note", err);
+      showToast("Unable to delete note", "error");
+    }
+  };
+
+  if (editing) {
+    return (
+      <article className="activity-item">
+        <span className="dot purple" />
+        <form className="activity-edit" onSubmit={save}>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Short headline" />
+          <textarea value={message} onChange={(e) => setMessage(e.target.value)} required />
+          <div className="modal-actions">
+            <button type="button" className="secondary-button" onClick={() => setEditing(false)}>
+              Cancel
+            </button>
+            <PrimaryButton icon={Pencil}>{saving ? "Saving…" : "Save"}</PrimaryButton>
+          </div>
+        </form>
+      </article>
+    );
+  }
+
+  return (
+    <article className="activity-item">
+      <span className="dot purple" />
+      <div>
+        <b>{act.title || "Note"}</b>
+        <p className="muted">{act.message}</p>
+        <p className="muted small">{act.author || act.by} · {act.createdAt ? new Date((act.createdAt.seconds||0)*1000).toLocaleString() : ''}</p>
+      </div>
+      {canManage && (
+        <div className="activity-item-actions">
+          <button type="button" onClick={() => setEditing(true)} aria-label="Edit note">
+            <Pencil size={14} />
+          </button>
+          <button type="button" onClick={remove} aria-label="Delete note">
+            <Trash2 size={14} />
+          </button>
+        </div>
+      )}
+    </article>
   );
 }
