@@ -14,7 +14,7 @@ import { consumePendingSignupContact } from "../firebase/authService";
 // invite/assignment UI exists.
 const AuthContext = createContext({
   user: null,
-  role: "employee",
+  role: "client",
   clientId: null,
   profile: null,
   loading: true,
@@ -23,14 +23,14 @@ const AuthContext = createContext({
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [role, setRole] = useState("employee");
+  const [role, setRole] = useState("client");
   const [clientId, setClientId] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const loadProfile = useCallback(async (nextUser) => {
     if (!nextUser || !db) {
-      setRole("employee");
+      setRole("client");
       setClientId(null);
       setProfile(null);
       return;
@@ -40,13 +40,12 @@ export function AuthProvider({ children }) {
     const snapshot = await getDoc(profileRef);
     if (snapshot.exists()) {
       const data = snapshot.data();
-      const nextRole = ["administrator", "client"].includes(data.role) ? data.role : "employee";
+      const nextRole = ["administrator", "client"].includes(data.role) ? data.role : "client";
       setRole(nextRole);
       setClientId(nextRole === "client" ? data.clientId || null : null);
       setProfile(data);
     } else {
-      const adminEmail = import.meta.env.VITE_ADMIN_EMAIL?.trim().toLowerCase();
-      const nextRole = adminEmail && nextUser.email?.toLowerCase() === adminEmail ? "administrator" : "employee";
+      const nextRole = "client";
       const newProfile = {
         email: nextUser.email || "",
         displayName: nextUser.displayName || "",

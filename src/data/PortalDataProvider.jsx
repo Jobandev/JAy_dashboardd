@@ -51,6 +51,11 @@ export function PortalDataProvider({ children }) {
       return () => { stopClient(); stopProjects(); stopAssets() }
     }
 
+    if (role === 'client') {
+      setClients([]); setProjects([]); setAssets([]); setActivities([]); setUsers([]); setLoading(false)
+      return undefined
+    }
+
     let active = true
     const setup = async () => {
       try {

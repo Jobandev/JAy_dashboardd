@@ -6,7 +6,7 @@ rules_version = '2';
 // hidden in the UI. Review and deploy via `firebase deploy --only firestore:rules`
 // once real client-role accounts are being provisioned.
 //
-// Roles live on users/{uid}: { role: 'administrator' | 'employee' | 'client', clientId }
+// Roles live on users/{uid}: { role: 'administrator' | 'client', clientId }
 // clients/projects/content documents carry a clientId field identifying
 // which organisation they belong to.
 
@@ -21,10 +21,6 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    function isStaff() {
-      return signedIn() && profile().role in ['administrator', 'employee'];
-    }
-
     function isAdmin() {
       return signedIn() && profile().role == 'administrator';
     }
@@ -34,33 +30,37 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      allow read: if signedIn() && (request.auth.uid == uid || isStaff());
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
       // Only an admin can change someone's role/clientId assignment.
-      allow create: if signedIn() && request.auth.uid == uid;
-      allow update: if isAdmin() || (signedIn() && request.auth.uid == uid && request.resource.data.role == resource.data.role);
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.role == 'client'
+        && request.resource.data.clientId == null;
+      allow update: if isAdmin() || (signedIn() && request.auth.uid == uid
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.clientId == resource.data.clientId);
     }
 
     match /clients/{clientId} {
-      allow read: if isStaff() || isOwnClient(clientId);
-      allow write: if isStaff();
+      allow read: if isAdmin() || isOwnClient(clientId);
+      allow write: if isAdmin();
     }
 
     match /projects/{projectId} {
-      allow read: if isStaff() || isOwnClient(resource.data.clientId);
-      allow write: if isStaff();
+      allow read: if isAdmin() || isOwnClient(resource.data.clientId);
+      allow write: if isAdmin();
     }
 
     match /content/{contentId} {
-      allow read: if isStaff() || isOwnClient(resource.data.clientId);
-      allow write: if isStaff();
+      allow read: if isAdmin() || isOwnClient(resource.data.clientId);
+      allow write: if isAdmin();
     }
 
     match /activities/{activityId} {
-      allow read, write: if isStaff();
+      allow read, write: if isAdmin();
     }
 
     match /portalMeta/{docId} {
-      allow read, write: if isStaff();
+      allow read, write: if isAdmin();
     }
   }
 }

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { ChevronDown, Play, Plus, Search, X } from "lucide-react";
 import { usePortalData } from "../data/PortalDataProvider";
+import { useAuth } from "../auth/AuthProvider";
 import { Shell } from "../components/Shell";
 import { PageHeader, PrimaryButton } from "../components/ui";
 import { AssetCard, MediaViewer } from "../components/AssetCard";
@@ -10,12 +11,13 @@ import { CONTENT_TYPES } from "../lib/contentTypes";
 
 export function Content() {
   const { assets, clients } = usePortalData();
+  const { role } = useAuth();
   const location = useLocation();
   const [filter, setFilter] = useState("All content");
   const [sortNewest, setSortNewest] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddLink, setShowAddLink] = useState(
-    location.search.includes("link=1")
+    role === "administrator" && location.search.includes("link=1")
   );
   const [viewing, setViewing] = useState(null);
   let shown =
@@ -54,9 +56,11 @@ export function Content() {
           title="Content library"
           description="One place for every deliverable, review and approved asset."
         >
-          <PrimaryButton onClick={() => setShowAddLink(true)}>
-            Add content link
-          </PrimaryButton>
+          {role === "administrator" && (
+            <PrimaryButton onClick={() => setShowAddLink(true)}>
+              Add content link
+            </PrimaryButton>
+          )}
         </PageHeader>
         <div className="content-toolbar">
           <label className="search">

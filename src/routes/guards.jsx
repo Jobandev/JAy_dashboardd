@@ -21,7 +21,7 @@ export function ClientDetailRoute({ children }) {
   const { id } = useParams();
   if (loading) return <div className="auth-loading">Loading portal…</div>;
   if (!user) return <Navigate to="/login" replace />;
-  if (role === "administrator" || role === "employee") return children;
+  if (role === "administrator") return children;
   if (role === "client") {
     return id === clientId ? children : <Navigate to={clientId ? `/clients/${clientId}` : "/settings"} replace />;
   }

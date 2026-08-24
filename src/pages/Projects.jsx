@@ -129,7 +129,9 @@ export function AddActivity({ projects, addActivity, close, user }) {
 export function Projects() {
   const { projects, clients, users } = usePortalData();
   const { user, role } = useAuth();
-  const visibleProjects = role === "administrator"
+  const visibleProjects = role === "client"
+    ? projects
+    : role === "administrator"
     ? projects
     : projects.filter((project) => project.assignedTo === user?.email);
   const [showCreate, setShowCreate] = useState(false);

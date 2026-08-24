@@ -73,7 +73,7 @@ export function Shell({ children }) {
               <div>
                 <b>{name}</b>
                 <span>{user?.email}</span>
-                <span>{role === "administrator" ? "Administrator" : role === "client" ? "Client" : "Employee"}</span>
+                <span>{role === "administrator" ? "Administrator" : "Client"}</span>
               </div>
             </div>
           </div>
@@ -100,4 +100,3 @@ export function Shell({ children }) {
       </div>
   );
 }
-
