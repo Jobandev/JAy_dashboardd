@@ -76,7 +76,11 @@ export function deleteProject(id) {
 }
 
 export function createContentLink(content) {
-  return addDoc(collection(db, collections.assets), { ...content, date: 'Just now', createdAt: serverTimestamp() })
+  return addDoc(collection(db, collections.assets), {
+    ...content,
+    postedAt: Date.now(),
+    createdAt: serverTimestamp(),
+  })
 }
 
 export function deleteContent(id) {

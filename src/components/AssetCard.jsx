@@ -3,6 +3,7 @@ import { ArrowUpRight, FileText, Play, X } from "lucide-react";
 import { usePortalData } from "../data/PortalDataProvider";
 import { getContentThumbnail, toEmbedUrl } from "../lib/media";
 import { typeIcon } from "../lib/contentTypes";
+import { formatContentPostedAt } from "../lib/contentDate";
 
 export function MediaViewer({ asset, close }) {
   const url = asset.url || asset.externalUrl;
@@ -113,7 +114,7 @@ export function AssetCard({ asset, compact = false }) {
           <p>
             {asset.client}
             <span>·</span>
-            {asset.date}
+            {formatContentPostedAt(asset)}
           </p>
           <p className="asset-description">
             {asset.description || "No description added."}
@@ -134,4 +135,3 @@ export function AssetCard({ asset, compact = false }) {
     </>
   );
 }
-

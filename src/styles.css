@@ -2071,3 +2071,52 @@ body,
 .profile-grid > .panel:first-child .progress-wrap {
   flex: 0 0 100px;
 }
+
+/* Film-editing charcoal, soft white, and one restrained Entropic red. */
+:root { color: #f5f5f3; background: #0e0f11; }
+.app-shell, body, .topbar { background: #0e0f11; }
+.sidebar { background: #121315; border-color: #292b2f; }
+.topbar, .profile { border-color: #292b2f; }
+.nav-link { color: #9ea2a9; }
+.nav-link:hover { background: #1a1c20; color: #f5f5f3; }
+.nav-link.active { background: #1c1718; color: #ffffff; box-shadow: inset 2px 0 #e22c27; }
+.page-heading h1, .page h1, .login h1 { color: #f7f7f5; background: none; -webkit-text-fill-color: currentColor; }
+.description, .muted, .profile span:not(.avatar) { color: #9ea2a9; }
+.eyebrow, .text-link, .auth-switch { color: #e7615d; }
+.primary-button, .primary-button:hover { background: #e22c27; color: #ffffff; box-shadow: none; transform: none; }
+.primary-button:disabled { background: #6d302e; opacity: 0.7; }
+.secondary-button, .filter-button, .segmented { background: #191b1f; border-color: #34373d; color: #ececea; box-shadow: none; }
+.secondary-button:hover, .filter-button:hover { background: #22252a; border-color: #565b63; box-shadow: none; }
+.stat-card, .panel, .asset-card, .modal, .media-viewer, .notification-panel, .content-feature { background: #17191d; border-color: #2e3137; box-shadow: none; }
+.stat-card:hover, .panel:hover, .asset-card:hover { border-color: #474c54; box-shadow: none; transform: none; }
+.stat-icon { background: #2b1a1b; color: #ef817c; }
+.asset-image:after { background: linear-gradient(180deg, transparent 45%, #0e0f11cc); }
+.play-button, .feature-play, .brand-mark { background: #e22c27; box-shadow: none; }
+.asset-card:hover .play-button, .feature-art:hover .feature-play { box-shadow: none; transform: none; }
+.search, .modal input, .settings-panel input, .login-card input, .upload-modal select, .upload-modal textarea { background: #111214; border-color: #34373d; color: #f5f5f3; }
+.modal input:focus, .settings-panel input:focus, .login-card input:focus, .upload-modal select:focus, .upload-modal textarea:focus, .search:focus-within { border-color: #e22c27; box-shadow: 0 0 0 3px rgba(226, 44, 39, 0.14); }
+.segmented button.active, .progress-fill { background: #e22c27; box-shadow: none; }
+.progress-bar-button { background: #3b3e45; }
+.status-select {
+  appearance: auto;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  min-width: 150px;
+  padding-right: 8px;
+}
+.project-row { grid-template-columns: minmax(0, 1.5fr) 160px minmax(100px, 0.8fr) 110px auto; }
+.client-row:hover,
+.projects-panel .project-row:hover { background: #1c1e22; }
+.file-input span:hover,
+.profile-photo-row label.file-label:hover { background: #202328; border-color: #565b63; color: #f5f5f3; }
+.auth-switch:hover,
+.progress-value-button:hover { color: #f5f5f3; }
+.upload-modal input[type="date"] {
+  color-scheme: dark;
+}
+.upload-modal input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: brightness(0) invert(1) !important;
+  opacity: 1 !important;
+  cursor: pointer;
+}

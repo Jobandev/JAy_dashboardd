@@ -8,6 +8,7 @@ import { PageHeader, PrimaryButton } from "../components/ui";
 import { AssetCard, MediaViewer } from "../components/AssetCard";
 import { getContentThumbnail } from "../lib/media";
 import { CONTENT_TYPES } from "../lib/contentTypes";
+import { contentPostedAt } from "../lib/contentDate";
 
 export function Content() {
   const { assets, clients } = usePortalData();
@@ -32,14 +33,14 @@ export function Content() {
     );
   }
   
-  // Sort by date if enabled
-  if (sortNewest) {
-    const dateOrder = { "Today": 0, "Yesterday": 1, "14 Aug": 2, "12 Aug": 3, "10 Aug": 4, "8 Aug": 5 };
-    shown = shown.slice().sort((a, b) => (dateOrder[a.date] ?? 999) - (dateOrder[b.date] ?? 999));
-  }
+  shown = shown.slice().sort((a, b) => {
+    const direction = sortNewest ? -1 : 1;
+    return direction * (contentPostedAt(a) - contentPostedAt(b));
+  });
   
-  const latestVideos = assets.filter((asset) => asset.type === "Video");
-  const featured = latestVideos.length > 0 ? latestVideos[0] : assets[0];
+  const newestAssets = assets.slice().sort((a, b) => contentPostedAt(b) - contentPostedAt(a));
+  const latestVideos = newestAssets.filter((asset) => asset.type === "Video");
+  const featured = latestVideos.length > 0 ? latestVideos[0] : newestAssets[0];
   const thumbnailUrl = featured ? getContentThumbnail(featured) : null;
   const featureStyle = thumbnailUrl
     ? {

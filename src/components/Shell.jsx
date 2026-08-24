@@ -22,9 +22,10 @@ const nav = [
 export function Shell({ children }) {
   const [open, setOpen] = useState(false);
   const location = useLocation();
-  const { user, role, clientId } = useAuth();
+  const { user, role, clientId, profile } = useAuth();
   const name = user?.displayName || user?.email?.split("@")[0] || "Portal user";
   const initials = name.charAt(0).toUpperCase();
+  const photoURL = profile?.photoURL || user?.photoURL;
   const visibleNav = role === "client"
     ? nav
         .filter((item) => !item.administratorOnly)
@@ -65,8 +66,8 @@ export function Shell({ children }) {
               Settings
             </NavLink>
             <div className="profile">
-              {user?.photoURL ? (
-                <img className="avatar small" src={user.photoURL} alt="" />
+              {photoURL ? (
+                <img className="avatar small" src={photoURL} alt="" />
               ) : (
                 <span className="avatar small">{initials}</span>
               )}
@@ -87,8 +88,8 @@ export function Shell({ children }) {
               Workspace <ChevronRight size={14} /> <span>Jay Downes — Client Dashboard</span>
             </div>
             <div className="top-actions">
-              {user?.photoURL ? (
-                <img className="avatar" src={user.photoURL} alt="" />
+              {photoURL ? (
+                <img className="avatar" src={photoURL} alt="" />
               ) : (
                 <span className="avatar">{initials}</span>
               )}

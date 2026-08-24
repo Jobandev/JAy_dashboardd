@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { ChevronDown, ChevronRight, CirclePlus, Pencil, Search, X } from "lucide-react";
+import { ChevronRight, CirclePlus, Pencil, Search, X } from "lucide-react";
 import { usePortalData } from "../data/PortalDataProvider";
 import { Shell } from "../components/Shell";
 import { PageHeader, PrimaryButton } from "../components/ui";
@@ -33,9 +33,6 @@ export function Clients() {
               placeholder="Search clients"
             />
           </label>
-          <button className="filter-button">
-            Status: All <ChevronDown size={16} />
-          </button>
         </div>
         <div className="client-table panel">
           <div className="table-head">
