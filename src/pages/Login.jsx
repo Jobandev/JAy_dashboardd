@@ -80,6 +80,17 @@ export function Login() {
   };
   return (
     <div className="login">
+      <video
+        className="login-background-video"
+        autoPlay
+        loop
+        muted
+        playsInline
+        aria-hidden="true"
+      >
+        <source src="/login-background.mp4" type="video/mp4" />
+      </video>
+      <div className="login-background-overlay" aria-hidden="true" />
       <div className="login-brand">
         <span className="brand-mark">E</span>ENTROPIC
       </div>
