@@ -8,6 +8,7 @@ export function Login() {
   const { user } = useAuth();
   const [isCreating, setIsCreating] = useState(false);
   const [username, setUsername] = useState("");
+  const [contact, setContact] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -19,7 +20,7 @@ export function Login() {
     setSubmitting(true);
     try {
       await (isCreating
-        ? createAccount(email, password, username)
+        ? createAccount(email, password, username, contact)
         : signIn(email, password));
       nav("/dashboard");
     } catch (err) {
@@ -92,7 +93,7 @@ export function Login() {
         </p>
         {isCreating && (
           <label>
-            Username
+            Full name
             <input
               type="text"
               value={username}
@@ -112,6 +113,18 @@ export function Login() {
             required
           />
         </label>
+        {isCreating && (
+          <label>
+            Contact number
+            <input
+              type="tel"
+              value={contact}
+              onChange={(e) => setContact(e.target.value)}
+              autoComplete="tel"
+              placeholder="e.g. 021 123 4567"
+            />
+          </label>
+        )}
         <label>
           Password
           <input
