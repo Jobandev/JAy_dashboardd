@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
-  Bell,
   ChevronRight,
   Film,
   FolderKanban,
@@ -23,7 +22,6 @@ const nav = [
 
 export function Shell({ children }) {
   const [open, setOpen] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
   const [toast, setToast] = useState(null);
   const location = useLocation();
   const { user, role, clientId } = useAuth();
@@ -76,7 +74,11 @@ export function Shell({ children }) {
               Settings
             </NavLink>
             <div className="profile">
-              <span className="avatar small">{initials}</span>
+              {user?.photoURL ? (
+                <img className="avatar small" src={user.photoURL} alt="" />
+              ) : (
+                <span className="avatar small">{initials}</span>
+              )}
               <div>
                 <b>{name}</b>
                 <span>{user?.email}</span>
@@ -94,30 +96,11 @@ export function Shell({ children }) {
               Workspace <ChevronRight size={14} /> <span>Jay Downes — Client Dashboard</span>
             </div>
             <div className="top-actions">
-              <div className="notification-wrap">
-                <button
-                  className="icon-button"
-                  onClick={() => setShowNotifications(!showNotifications)}
-                  aria-label="Notifications"
-                >
-                  <Bell size={19} />
-                  <i />
-                </button>
-                {showNotifications && (
-                  <div className="notification-panel">
-                    <b>Notifications</b>
-                    <p>
-                      <span />
-                      Content library is ready for new delivery links.
-                    </p>
-                    <p>
-                      <span />
-                      Your Firestore changes save automatically.
-                    </p>
-                  </div>
-                )}
-              </div>
-              <span className="avatar">{initials}</span>
+              {user?.photoURL ? (
+                <img className="avatar" src={user.photoURL} alt="" />
+              ) : (
+                <span className="avatar">{initials}</span>
+              )}
             </div>
           </header>
 
