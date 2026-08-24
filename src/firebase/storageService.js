@@ -22,3 +22,9 @@ export async function uploadContent({ file, clientId, client, title, type, descr
     createdAt: serverTimestamp(),
   })
 }
+
+export async function uploadProfilePhoto(file, uid) {
+  const fileRef = ref(storage, `avatars/${uid}/${Date.now()}-${fileNameSafe(file.name)}`)
+  await uploadBytes(fileRef, file)
+  return getDownloadURL(fileRef)
+}

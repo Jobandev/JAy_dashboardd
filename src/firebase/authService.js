@@ -22,14 +22,30 @@ export async function resetPassword(email) {
   return sendPasswordResetEmail(auth, email)
 }
 
-export async function createAccount(email, password, username) {
+// A brief handoff for the contact number entered on the sign-up form.
+// AuthProvider creates the users/{uid} profile document itself in response
+// to the auth state change fired by createUserWithEmailAndPassword, so it
+// has no direct way to receive form data from the Login page. This small
+// synchronous in-memory handoff avoids a race between "account created" and
+// "profile document written" without needing a second Firestore write.
+let pendingSignupContact = ''
+export function consumePendingSignupContact() {
+  const value = pendingSignupContact
+  pendingSignupContact = ''
+  return value
+}
+
+export async function createAccount(email, password, username, contact) {
   assertConfigured()
+  pendingSignupContact = (contact || '').trim()
   const credential = await createUserWithEmailAndPassword(auth, email, password)
   await updateProfile(credential.user, { displayName: username.trim() })
   return credential
 }
 
-export async function saveProfile(displayName) {
+export async function saveProfile(displayName, photoURL) {
   assertConfigured()
-  await updateProfile(auth.currentUser, { displayName })
+  const updates = { displayName }
+  if (photoURL) updates.photoURL = photoURL
+  await updateProfile(auth.currentUser, updates)
 }

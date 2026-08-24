@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import { onAuthStateChanged } from 'firebase/auth'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
-import { auth, db, isFirebaseConfigured } from '../firebase/firebase'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { auth, db, isFirebaseConfigured } from "../firebase/firebase";
+import { consumePendingSignupContact } from "../firebase/authService";
 
 // role is one of:
 //   'administrator' — full access to every client (Jay)
@@ -11,56 +12,86 @@ import { auth, db, isFirebaseConfigured } from '../firebase/firebase'
 // automatically anywhere yet — an administrator assigns it by hand on the
 // user's Firestore profile document (users/{uid}.clientId) until a proper
 // invite/assignment UI exists.
-const AuthContext = createContext({ user: null, role: 'employee', clientId: null, loading: true })
+const AuthContext = createContext({
+  user: null,
+  role: "employee",
+  clientId: null,
+  profile: null,
+  loading: true,
+  refreshProfile: async () => {},
+});
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [role, setRole] = useState('employee')
-  const [clientId, setClientId] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState(null);
+  const [role, setRole] = useState("employee");
+  const [clientId, setClientId] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadProfile = useCallback(async (nextUser) => {
+    if (!nextUser || !db) {
+      setRole("employee");
+      setClientId(null);
+      setProfile(null);
+      return;
+    }
+
+    const profileRef = doc(db, "users", nextUser.uid);
+    const snapshot = await getDoc(profileRef);
+    if (snapshot.exists()) {
+      const data = snapshot.data();
+      const nextRole = ["administrator", "client"].includes(data.role) ? data.role : "employee";
+      setRole(nextRole);
+      setClientId(nextRole === "client" ? data.clientId || null : null);
+      setProfile(data);
+    } else {
+      const adminEmail = import.meta.env.VITE_ADMIN_EMAIL?.trim().toLowerCase();
+      const nextRole = adminEmail && nextUser.email?.toLowerCase() === adminEmail ? "administrator" : "employee";
+      const newProfile = {
+        email: nextUser.email || "",
+        displayName: nextUser.displayName || "",
+        role: nextRole,
+        clientId: null,
+        contact: consumePendingSignupContact(),
+        photoURL: nextUser.photoURL || "",
+      };
+      await setDoc(profileRef, newProfile);
+      setRole(nextRole);
+      setClientId(null);
+      setProfile(newProfile);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isFirebaseConfigured || !auth) {
-      setLoading(false)
-      return undefined
+      setLoading(false);
+      return undefined;
     }
 
     return onAuthStateChanged(auth, async (nextUser) => {
-      setUser(nextUser)
-      if (!nextUser || !db) {
-        setRole('employee')
-        setClientId(null)
-        setLoading(false)
-        return
-      }
+      setUser(nextUser);
+      await loadProfile(nextUser);
+      setLoading(false);
+    });
+  }, [loadProfile]);
 
-      const profileRef = doc(db, 'users', nextUser.uid)
-      const profile = await getDoc(profileRef)
-      if (profile.exists()) {
-        const data = profile.data()
-        const nextRole = ['administrator', 'client'].includes(data.role) ? data.role : 'employee'
-        setRole(nextRole)
-        setClientId(nextRole === 'client' ? data.clientId || null : null)
-      } else {
-        const adminEmail = import.meta.env.VITE_ADMIN_EMAIL?.trim().toLowerCase()
-        const nextRole = adminEmail && nextUser.email?.toLowerCase() === adminEmail
-          ? 'administrator'
-          : 'employee'
-        await setDoc(profileRef, {
-          email: nextUser.email || '',
-          displayName: nextUser.displayName || '',
-          role: nextRole,
-          clientId: null,
-        })
-        setRole(nextRole)
-        setClientId(null)
-      }
-      setLoading(false)
-    })
-  }, [])
+  // Re-reads the Firestore profile doc without a full page reload, so the
+  // sidebar/settings page reflect a just-saved display name, contact, or
+  // photo immediately.
+  const refreshProfile = useCallback(async () => {
+    if (auth?.currentUser) {
+      // Firebase mutates auth.currentUser in place on updateProfile(), so a
+      // fresh object reference is needed for React to notice the change.
+      setUser({ ...auth.currentUser });
+      await loadProfile(auth.currentUser);
+    }
+  }, [loadProfile]);
 
-  const value = useMemo(() => ({ user, role, clientId, loading }), [user, role, clientId, loading])
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  const value = useMemo(
+    () => ({ user, role, clientId, profile, loading, refreshProfile }),
+    [user, role, clientId, profile, loading, refreshProfile],
+  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export const useAuth = () => useContext(AuthContext)
+export const useAuth = () => useContext(AuthContext);
