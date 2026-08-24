@@ -91,6 +91,7 @@ export function AddClient({ close }) {
         name,
         contact: form.get("contact"),
         email: form.get("email"),
+        companyEmail: form.get("companyEmail"),
         initials: name
           .split(" ")
           .map((word) => word[0])
@@ -120,16 +121,24 @@ export function AddClient({ close }) {
           <input name="name" required placeholder="e.g. ABC Media" />
         </label>
         <label>
-          Primary contact
-          <input name="contact" required placeholder="Full name" />
+          Full name
+          <input name="contact" required placeholder="Primary contact's full name" />
         </label>
         <label>
-          Email address
+          Contact email
           <input
             name="email"
             type="email"
             required
             placeholder="name@company.com"
+          />
+        </label>
+        <label>
+          Company email address
+          <input
+            name="companyEmail"
+            type="email"
+            placeholder="hello@company.com"
           />
         </label>
         {error && <p className="form-error">{error}</p>}
@@ -161,6 +170,7 @@ export function EditClient({ client, close }) {
         name,
         contact: form.get("contact"),
         email: form.get("email"),
+        companyEmail: form.get("companyEmail"),
         initials: name
           .split(" ")
           .map((word) => word[0])
@@ -191,12 +201,16 @@ export function EditClient({ client, close }) {
           <input name="name" defaultValue={client.name} required />
         </label>
         <label>
-          Primary contact
+          Full name
           <input name="contact" defaultValue={client.contact} required />
         </label>
         <label>
-          Email address
+          Contact email
           <input name="email" type="email" defaultValue={client.email} required />
+        </label>
+        <label>
+          Company email address
+          <input name="companyEmail" type="email" defaultValue={client.companyEmail} placeholder="hello@company.com" />
         </label>
         <label>
           Colour

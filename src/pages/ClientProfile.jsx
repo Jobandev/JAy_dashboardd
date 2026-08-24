@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { NavLink, useLocation, useParams } from "react-router-dom";
-import { ArrowUpRight, Pencil } from "lucide-react";
+import { useContext, useState } from "react";
+import { NavLink, useLocation, useNavigate, useParams } from "react-router-dom";
+import { ArrowUpRight, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { usePortalData } from "../data/PortalDataProvider";
 import { Shell } from "../components/Shell";
@@ -9,18 +9,37 @@ import { AssetCard } from "../components/AssetCard";
 import { ProjectRow } from "../components/ProjectRow";
 import { EditClient } from "./Clients";
 import { AddProject } from "./Projects";
+import { ToastContext } from "../lib/ToastContext";
 
 export function ClientProfile() {
   const { id } = useParams();
-  const { clients, projects, assets, users } = usePortalData();
+  const { clients, projects, assets, users, deleteClient } = usePortalData();
   const { role } = useAuth();
   const canManage = role === "administrator" || role === "employee";
+  const canDelete = role === "administrator";
   const location = useLocation();
+  const navigate = useNavigate();
+  const { showToast } = useContext(ToastContext);
   const [showEdit, setShowEdit] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const client = clients.find((c) => c.id === id);
   const search = new URLSearchParams(location.search);
   const showAllProjects = search.get('view') === 'projects';
+  const handleDelete = async () => {
+    if (!client) return;
+    if (!window.confirm(`Delete ${client.name}? This removes the client profile — its projects and content stay in the library but will no longer be linked to a client.`)) return;
+    setDeleting(true);
+    try {
+      await deleteClient(client.id);
+      showToast("Client deleted", "success");
+      navigate("/clients");
+    } catch (err) {
+      console.error("Unable to delete client", err);
+      showToast("Unable to delete client", "error");
+      setDeleting(false);
+    }
+  };
   if (!client)
     return (
       <Shell>
@@ -52,6 +71,12 @@ export function ClientProfile() {
                 <Pencil size={16} />
                 Edit client
               </button>
+              {canDelete && (
+                <button className="secondary-button project-delete" onClick={handleDelete} disabled={deleting}>
+                  <Trash2 size={16} />
+                  {deleting ? "Deleting…" : "Delete client"}
+                </button>
+              )}
               <PrimaryButton onClick={() => setShowCreate(true)}>New project</PrimaryButton>
             </div>
           )}
@@ -76,13 +101,19 @@ export function ClientProfile() {
             <p className="eyebrow">CLIENT DETAILS</p>
             <dl>
               <div>
-                <dt>Primary contact</dt>
+                <dt>Full name</dt>
                 <dd>{client.contact}</dd>
               </div>
               <div>
-                <dt>Email</dt>
+                <dt>Contact email</dt>
                 <dd>{client.email}</dd>
               </div>
+              {client.companyEmail && (
+                <div>
+                  <dt>Company email</dt>
+                  <dd>{client.companyEmail}</dd>
+                </div>
+              )}
               <div>
                 <dt>Client since</dt>
                 <dd>March 2024</dd>

@@ -62,6 +62,10 @@ export function updateClient(id, updates) {
   return updateDoc(doc(db, collections.clients, id), updates)
 }
 
+export function deleteClient(id) {
+  return deleteDoc(doc(db, collections.clients, id))
+}
+
 export function updateProject(id, updates) {
   // updates should be an object with the fields to update on the project document
   return updateDoc(doc(db, collections.projects, id), updates)
@@ -85,4 +89,12 @@ export function createProject(project) {
 
 export function createActivity(activity) {
   return addDoc(collection(db, collections.activities), { ...activity, createdAt: serverTimestamp() })
+}
+
+export function updateActivity(id, updates) {
+  return updateDoc(doc(db, collections.activities, id), updates)
+}
+
+export function deleteActivity(id) {
+  return deleteDoc(doc(db, collections.activities, id))
 }

@@ -5,10 +5,13 @@ import {
   clearDemoData,
   createClient,
   updateClient,
+  deleteClient,
   updateProject,
   createContentLink,
   createProject,
   createActivity,
+  updateActivity,
+  deleteActivity,
   deleteProject,
   deleteContent,
   seedPortalData,
@@ -67,7 +70,7 @@ export function PortalDataProvider({ children }) {
     return () => { active = false; stopClients(); stopProjects(); stopAssets(); stopActivities(); stopUsers() }
   }, [user, role, clientId])
 
-  const value = useMemo(() => ({ clients, projects, assets, activities, users, loading, addClient: createClient, updateClient: updateClient, updateProject: updateProject, addContentLink: createContentLink, addProject: createProject, addActivity: createActivity, deleteProject, deleteContent, clearDemoData }), [clients, projects, assets, activities, users, loading])
+  const value = useMemo(() => ({ clients, projects, assets, activities, users, loading, addClient: createClient, updateClient: updateClient, deleteClient, updateProject: updateProject, addContentLink: createContentLink, addProject: createProject, addActivity: createActivity, updateActivity, deleteActivity, deleteProject, deleteContent, clearDemoData }), [clients, projects, assets, activities, users, loading])
   return <PortalDataContext.Provider value={value}>{children}</PortalDataContext.Provider>
 }
 
