@@ -179,11 +179,14 @@ export function ProjectRow({ project: p }) {
     e.stopPropagation();
     const status = e.target.value;
     try {
-      await updateProject(p.id, { status });
+      const id = p.id || p.name.toLowerCase().replace(/\s+/g, "-");
+      await updateProject(id, { status });
       showToast("Project status updated", "success");
     } catch (err) {
       console.error("Unable to update project status", err);
-      showToast("Unable to update project status", "error");
+      showToast(err?.code === "permission-denied"
+        ? "Project update denied. Confirm your user role is administrator and publish the latest Firestore rules."
+        : err?.message || "Unable to update project status", "error");
     }
   };
 

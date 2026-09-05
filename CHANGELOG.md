@@ -46,3 +46,8 @@ Audit old content for correct clientId/projectId values, deploy/test Firestore r
 - Added contact number fields when creating and editing an organisation.
 - Added contact number when creating a client login and showed it in the account list.
 - Organisation profiles display the saved contact number.
+
+## Project status feedback
+
+- Status updates now use the saved project document ID or the seeded fallback ID.
+- Permission errors explain that the administrator profile and published Firestore rules need checking.
