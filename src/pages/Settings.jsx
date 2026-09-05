@@ -2,7 +2,6 @@ import { useContext, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Camera, Pencil } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
-import { usePortalData } from "../data/PortalDataProvider";
 import { saveProfile, signOutUser } from "../firebase/authService";
 import { updateUserProfileDoc } from "../firebase/userService";
 import { uploadProfilePhoto } from "../firebase/storageService";
@@ -51,8 +50,7 @@ function normaliseProfilePhotoUrl(value) {
 }
 
 export function SettingsPage() {
-  const { user, role, profile, refreshProfile } = useAuth();
-  const { clearDemoData } = usePortalData();
+  const { user, profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useContext(ToastContext);
   const fileInputRef = useRef(null);
@@ -132,23 +130,6 @@ export function SettingsPage() {
       showToast("Unable to save profile", "error");
     } finally {
       setSaving(false);
-    }
-  };
-
-  const removeDemo = async () => {
-    if (
-      !window.confirm(
-        "Remove only the seeded demo clients, projects and content? Your own new records are not deleted."
-      )
-    )
-      return;
-    try {
-      await clearDemoData();
-      setMessage("Demo data removed.");
-      showToast("Demo data removed", "success");
-    } catch (err) {
-      console.error("Unable to remove demo data", err);
-      showToast("Unable to remove demo data", "error");
     }
   };
 
@@ -236,19 +217,7 @@ export function SettingsPage() {
           >
             {signingOut ? "Signing out…" : "Sign out"}
           </button>
-          {role === "administrator" && (
-            <div className="danger-zone">
-              <p className="eyebrow">DEMO DATA</p>
-              <h3>Remove demo data</h3>
-              <p>
-                Deletes only the seeded client library and starter projects.
-                Anything you've added by hand remains.
-              </p>
-              <button className="danger-button" onClick={removeDemo}>
-                Remove demo data
-              </button>
-            </div>
-          )}
+
         </section>
       </section>
     </Shell>
