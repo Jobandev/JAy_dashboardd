@@ -33,7 +33,7 @@ service cloud.firestore {
     match /resourceFeedback/{feedbackId} {
       allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid && ownClient(resource.data.clientId));
       allow create: if signedIn() && request.resource.data.userId == request.auth.uid && ownClient(request.resource.data.clientId) && get(/databases/$(database)/documents/content/$(request.resource.data.resourceId)).data.clientId == request.resource.data.clientId;
-      allow update: if signedIn() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid && ownClient(resource.data.clientId) && request.resource.data.clientId == resource.data.clientId;
+      allow update: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid && ownClient(resource.data.clientId) && request.resource.data.clientId == resource.data.clientId);
       allow delete: if isAdmin();
     }
     match /portalMeta/{id} { allow read, write: if isAdmin(); }

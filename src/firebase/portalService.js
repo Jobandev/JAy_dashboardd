@@ -18,6 +18,14 @@ export async function getResourceFeedback(resourceId, userId) {
   return snapshot.exists() ? snapshot.data() : null
 }
 
+export function resolveResourceFeedback(id) {
+  return updateDoc(doc(db, collections.feedback, id), { status: 'resolved', resolvedAt: serverTimestamp() })
+}
+
+export function deleteResourceFeedback(id) {
+  return deleteDoc(doc(db, collections.feedback, id))
+}
+
 export async function seedPortalData() {
   const metaRef = doc(db, 'portalMeta', 'seed')
   if ((await getDoc(metaRef)).exists()) return

@@ -11,8 +11,10 @@ import { AddActivity } from "./Projects";
 import { ToastContext } from "../lib/ToastContext";
 
 export function Dashboard() {
-  const { clients, assets, projects, activities, feedback, addActivity } = usePortalData();
+  const { clients, assets, projects, activities, feedback, addActivity, resolveResourceFeedback, deleteResourceFeedback } = usePortalData();
+  const [feedbackAction, setFeedbackAction] = useState(null);
   const { user, role, clientId } = useAuth();
+  const { showToast } = useContext(ToastContext);
   const navigate = useNavigate();
   const [showAddActivity, setShowAddActivity] = useState(false);
   if (role === "client") {
@@ -124,7 +126,13 @@ export function Dashboard() {
             const resource = assets.find(asset => asset.id === item.resourceId);
             const project = projects.find(project => project.id === resource?.projectId);
             const client = clients.find(client => client.id === item.clientId);
-            return <div className="feedback-item" key={item.id}><div><b>{resource?.title || 'Resource'}</b><p className="muted">{client?.name || 'Client'}{project ? ` · ${project.name}` : ''}</p></div><span>Needs discussion</span></div>;
+            const act = async (action) => {
+              setFeedbackAction(item.id);
+              try { await (action === 'resolve' ? resolveResourceFeedback(item.id) : deleteResourceFeedback(item.id)); showToast(action === 'resolve' ? 'Feedback marked resolved' : 'Feedback deleted', 'success'); }
+              catch (error) { showToast(error.message || 'Unable to update feedback', 'error'); }
+              finally { setFeedbackAction(null); }
+            };
+            return <div className="feedback-item" key={item.id}><div><b>{resource?.title || 'Resource'}</b><p className="muted">{client?.name || 'Client'}{project ? ` · ${project.name}` : ''}</p></div><span>Needs discussion</span><div className="feedback-item-actions"><button className="secondary-button" disabled={feedbackAction === item.id} onClick={() => act('resolve')}>Mark resolved</button><button className="feedback-delete" disabled={feedbackAction === item.id} onClick={() => window.confirm('Delete this feedback?') && act('delete')}>Delete</button></div></div>;
           }) : <p className="description">No client feedback needs attention.</p>}
         </section>
       {showAddActivity && <AddActivity projects={projects} addActivity={addActivity} close={() => setShowAddActivity(false)} user={user} />}

@@ -19,6 +19,8 @@ import {
   subscribeToCollection,
   subscribeToClientScopedCollection,
   subscribeToClientDoc,
+  resolveResourceFeedback,
+  deleteResourceFeedback,
 } from '../firebase/portalService'
 
 const PortalDataContext = createContext({ clients: [], projects: [], assets: [], users: [], feedback: [], loading: true, addClient: async () => {}, addContentLink: async () => {}, deleteProject: async () => {}, deleteContent: async () => {} })
@@ -87,7 +89,7 @@ function ScopedPortalDataProvider({ children }) {
     return () => { active = false; stopClients(); stopProjects(); stopAssets(); stopActivities(); stopUsers(); stopFeedback() }
   }, [user, role, clientId])
 
-  const value = useMemo(() => ({ clients, projects, assets, activities, users, feedback, loading, addClient: createClient, updateClient: updateClient, deleteClient, updateProject: updateProject, addContentLink: createContentLink, updateContent, addProject: createProject, addActivity: createActivity, updateActivity, deleteActivity, deleteProject, deleteContent, clearDemoData }), [clients, projects, assets, activities, users, feedback, loading])
+  const value = useMemo(() => ({ clients, projects, assets, activities, users, feedback, loading, resolveResourceFeedback, deleteResourceFeedback, addClient: createClient, updateClient: updateClient, deleteClient, updateProject: updateProject, addContentLink: createContentLink, updateContent, addProject: createProject, addActivity: createActivity, updateActivity, deleteActivity, deleteProject, deleteContent, clearDemoData }), [clients, projects, assets, activities, users, feedback, loading])
   return <PortalDataContext.Provider value={value}>{error && <p role="alert" className="form-error">{error}</p>}{children}</PortalDataContext.Provider>
 }
 

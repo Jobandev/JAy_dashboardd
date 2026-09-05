@@ -2165,6 +2165,11 @@ body,
 .feedback-count { min-width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: #382818; color: #f0c27e; font-weight: 700; }
 .feedback-item { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-top: 1px solid #2b3033; }
 .feedback-item > span { color: #f0c27e; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.feedback-item-actions { display: flex; gap: 8px; align-items: center; margin-left: auto; }
+.feedback-item-actions .secondary-button, .feedback-delete { margin: 0; min-height: 34px; padding: 7px 10px; font-size: 11px; }
+.feedback-delete { border: 1px solid #69414a; border-radius: 5px; background: transparent; color: #efa9b0; cursor: pointer; }
+.feedback-delete:hover { background: #351d23; }
+@media (max-width: 700px) { .feedback-item { align-items: flex-start; flex-wrap: wrap; } .feedback-item-actions { width: 100%; margin-left: 0; } }
 .settings-panel select { width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid #393d3c; border-radius: 6px; background: #141617; color: #f4f3ef; font: inherit; color-scheme: dark; }
 .settings-panel select:focus-visible, .back-link:focus-visible { outline: 2px solid #f06b65; outline-offset: 3px; }
 .user-access-row { align-items: flex-end; gap: 16px; padding: 20px 0; }

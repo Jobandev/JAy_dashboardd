@@ -6,7 +6,7 @@ vi.mock('../src/auth/AuthProvider', () => ({useAuth: () => state.auth}));
 vi.mock('../src/firebase/firebase', () => ({isFirebaseConfigured:true}));
 vi.mock('../src/firebase/portalService', () => {
   const subscribe=(...args)=>{state.listeners.push(args);const stop=vi.fn();state.stops.push(stop);return stop;};
-  return {subscribeToCollection:subscribe,subscribeToClientScopedCollection:subscribe,subscribeToClientDoc:subscribe,seedPortalData:vi.fn().mockResolvedValue(),clearDemoData:vi.fn(),createClient:vi.fn(),updateClient:vi.fn(),deleteClient:vi.fn(),updateProject:vi.fn(),createContentLink:vi.fn(),updateContent:vi.fn(),createProject:vi.fn(),createActivity:vi.fn(),updateActivity:vi.fn(),deleteActivity:vi.fn(),deleteProject:vi.fn(),deleteContent:vi.fn()};
+  return {subscribeToCollection:subscribe,subscribeToClientScopedCollection:subscribe,subscribeToClientDoc:subscribe,seedPortalData:vi.fn().mockResolvedValue(),clearDemoData:vi.fn(),createClient:vi.fn(),updateClient:vi.fn(),deleteClient:vi.fn(),updateProject:vi.fn(),createContentLink:vi.fn(),updateContent:vi.fn(),createProject:vi.fn(),createActivity:vi.fn(),updateActivity:vi.fn(),deleteActivity:vi.fn(),deleteProject:vi.fn(),deleteContent:vi.fn(),resolveResourceFeedback:vi.fn(),deleteResourceFeedback:vi.fn()};
 });
 import { PortalDataProvider, usePortalData } from '../src/data/PortalDataProvider';
 function Probe(){const {clients,projects,assets}=usePortalData();return <div data-testid="data">{JSON.stringify({clients,projects,assets})}</div>;}
