@@ -1,96 +1,51 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { auth, db, isFirebaseConfigured } from "../firebase/firebase";
-import { consumePendingSignupContact } from "../firebase/authService";
-
-// role is one of:
-//   'administrator' — full access to every client (Jay)
-//   'employee'      — full access to every client (internal team)
-//   'client'        — scoped to a single organisation via clientId
-// clientId is only meaningful when role === 'client'. It is not set
-// automatically anywhere yet — an administrator assigns it by hand on the
-// user's Firestore profile document (users/{uid}.clientId) until a proper
-// invite/assignment UI exists.
-const AuthContext = createContext({
-  user: null,
-  role: "client",
-  clientId: null,
-  profile: null,
-  loading: true,
-  refreshProfile: async () => {},
-});
-
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
+import { auth, db, isFirebaseConfigured } from '../firebase/firebase';
+import { consumePendingSignupContact } from '../firebase/authService';
+const AuthContext = createContext({ user: null, role: 'client', clientId: null, profile: null, loading: true });
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [role, setRole] = useState("client");
-  const [clientId, setClientId] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const loadProfile = useCallback(async (nextUser) => {
-    if (!nextUser || !db) {
-      setRole("client");
-      setClientId(null);
-      setProfile(null);
-      return;
-    }
-
-    const profileRef = doc(db, "users", nextUser.uid);
-    const snapshot = await getDoc(profileRef);
-    if (snapshot.exists()) {
-      const data = snapshot.data();
-      const nextRole = ["administrator", "client"].includes(data.role) ? data.role : "client";
-      setRole(nextRole);
-      setClientId(nextRole === "client" ? data.clientId || null : null);
-      setProfile(data);
-    } else {
-      const nextRole = "client";
-      const newProfile = {
-        email: nextUser.email || "",
-        displayName: nextUser.displayName || "",
-        role: nextRole,
-        clientId: null,
-        contact: consumePendingSignupContact(),
-        photoURL: nextUser.photoURL || "",
-      };
-      await setDoc(profileRef, newProfile);
-      setRole(nextRole);
-      setClientId(null);
-      setProfile(newProfile);
-    }
-  }, []);
-
+  const [error, setError] = useState('');
   useEffect(() => {
-    if (!isFirebaseConfigured || !auth) {
-      setLoading(false);
-      return undefined;
-    }
-
-    return onAuthStateChanged(auth, async (nextUser) => {
-      setUser(nextUser);
-      await loadProfile(nextUser);
-      setLoading(false);
+    if (!isFirebaseConfigured || !auth) { setLoading(false); return; }
+    let generation = 0;
+    let stopProfile = () => {};
+    const stopAuth = onAuthStateChanged(auth, async nextUser => {
+      const current = ++generation;
+      stopProfile(); setProfile(null); setUser(nextUser); setLoading(true); setError('');
+      if (!nextUser) { setLoading(false); return; }
+      const ref = doc(db, 'users', nextUser.uid);
+      try {
+        const snapshot = await getDoc(ref);
+        if (current !== generation) return;
+        if (!snapshot.exists()) await setDoc(ref, { email: nextUser.email || '', displayName: nextUser.displayName || '', role: 'client', clientId: null, contact: consumePendingSignupContact(), photoURL: nextUser.photoURL || '' });
+        if (current !== generation) return;
+        stopProfile = onSnapshot(ref, result => {
+          if (current !== generation) return;
+          setProfile(result.exists() ? result.data() : null); setLoading(false);
+        }, () => {
+          if (current !== generation) return;
+          setProfile(null); setError('Unable to load your account permissions. Reload to try again.'); setLoading(false);
+        });
+      } catch {
+        if (current !== generation) return;
+        setProfile(null); setError('Unable to load your account permissions. Reload to try again.'); setLoading(false);
+      }
     });
-  }, [loadProfile]);
-
-  // Re-reads the Firestore profile doc without a full page reload, so the
-  // sidebar/settings page reflect a just-saved display name, contact, or
-  // photo immediately.
+    return () => { generation++; stopProfile(); stopAuth(); };
+  }, []);
   const refreshProfile = useCallback(async () => {
-    if (auth?.currentUser) {
-      // Firebase mutates auth.currentUser in place on updateProfile(), so a
-      // fresh object reference is needed for React to notice the change.
-      setUser({ ...auth.currentUser });
-      await loadProfile(auth.currentUser);
-    }
-  }, [loadProfile]);
-
-  const value = useMemo(
-    () => ({ user, role, clientId, profile, loading, refreshProfile }),
-    [user, role, clientId, profile, loading, refreshProfile],
-  );
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+    const currentUser = auth?.currentUser;
+    if (!currentUser) return;
+    const snapshot = await getDoc(doc(db, 'users', currentUser.uid));
+    if (auth.currentUser?.uid === currentUser.uid) { setUser({ ...currentUser }); setProfile(snapshot.data() || null); }
+  }, []);
+  const role = profile?.role === 'administrator' ? 'administrator' : 'client';
+  const clientId = role === 'client' ? profile?.clientId || null : null;
+  const value = useMemo(() => ({ user, role, clientId, profile, loading, refreshProfile }), [user, role, clientId, profile, loading, refreshProfile]);
+  return <AuthContext.Provider value={value}>{error && <p role="alert" className="form-error">{error}</p>}{children}</AuthContext.Provider>;
 }
-
 export const useAuth = () => useContext(AuthContext);

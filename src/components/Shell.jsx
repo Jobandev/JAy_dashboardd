@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   ChevronRight,
@@ -21,6 +21,17 @@ const nav = [
 
 export function Shell({ children }) {
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const closeForm = event => {
+      const backdrops = document.querySelectorAll('.modal-backdrop:not(.media-backdrop)');
+      const backdrop = backdrops[backdrops.length - 1];
+      if (!backdrop || backdrop.querySelector('button[type="submit"]:disabled, .primary-button:disabled')) return;
+      if ((event.type === 'keydown' && event.key === 'Escape') || (event.type === 'mousedown' && event.target === backdrop)) backdrop.querySelector('.modal-close')?.click();
+    };
+    document.addEventListener('keydown', closeForm);
+    document.addEventListener('mousedown', closeForm);
+    return () => { document.removeEventListener('keydown', closeForm); document.removeEventListener('mousedown', closeForm); };
+  }, []);
   const location = useLocation();
   const { user, role, clientId, profile } = useAuth();
   const name = user?.displayName || user?.email?.split("@")[0] || "Portal user";
@@ -29,7 +40,7 @@ export function Shell({ children }) {
   const visibleNav = role === "client"
     ? nav
         .filter((item) => !item.administratorOnly)
-        .map((item) => (item.to === "/dashboard" ? { ...item, to: `/clients/${clientId}`, label: "My organisation" } : item))
+        .map((item) => (item.to === "/dashboard" ? { ...item, to: clientId ? `/clients/${clientId}` : "/dashboard", label: "My organisation" } : item))
     : nav.filter((item) => !item.administratorOnly || role === "administrator");
 
   return (

@@ -9,6 +9,7 @@ import {
 
 import { useAuth } from "../auth/AuthProvider";
 import { usePortalData } from "../data/PortalDataProvider";
+import { EditProject } from "../pages/Projects";
 import { ToastContext } from "../lib/ToastContext";
 
 export function ProjectRow({ project: p }) {
@@ -24,6 +25,8 @@ export function ProjectRow({ project: p }) {
     );
   };
 
+  const [showEdit, setShowEdit] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [editing, setEditing] = useState(false);
   const [tempProgress, setTempProgress] = useState(getProgress());
   const [displayedProgress, setDisplayedProgress] =
@@ -49,11 +52,11 @@ export function ProjectRow({ project: p }) {
     e.stopPropagation();
 
     const clientObj = clients.find(
-      (client) => client.name === p.client
+      (client) => client.id === p.clientId
     );
 
     const target = clientObj
-      ? `/clients/${clientObj.id}?view=projects`
+      ? `/clients/${clientObj.id}?view=projects#project-${p.id}`
       : "/clients";
 
     navigate(target);
@@ -140,10 +143,11 @@ export function ProjectRow({ project: p }) {
     e.stopPropagation();
 
     const confirmed = window.confirm(
-      `Delete project "${p.name}"?`
+      `Delete project "${p.name}" and all its resources? This cannot be undone.`
     );
 
-    if (!confirmed) return;
+    if (!confirmed || deleting) return;
+    setDeleting(true);
 
     try {
       const id =
@@ -165,10 +169,10 @@ export function ProjectRow({ project: p }) {
       );
 
       showToast(
-        "Unable to delete project",
+        err.message || "Unable to delete project",
         "error"
       );
-    }
+    } finally { setDeleting(false); }
   };
 
   const changeStatus = async (e) => {
@@ -184,6 +188,7 @@ export function ProjectRow({ project: p }) {
   };
 
   return (
+    <>
     <div
       className="project-row"
       onClick={openClient}
@@ -196,9 +201,10 @@ export function ProjectRow({ project: p }) {
 
         <div>
           <b>{p.name}</b>
+          {p.description && <p className="project-description">{p.description}</p>}
 
           <p>
-            {p.client}
+            {clients.find(client => client.id === p.clientId)?.name || p.client}
 
             {p.assignedToName && (
               <> · {p.assignedToName}</>
@@ -351,11 +357,13 @@ export function ProjectRow({ project: p }) {
       </div>
 
       <div className="project-actions">
+        {role === "administrator" && <button className="secondary-button" onClick={e => { e.stopPropagation(); setShowEdit(true); }}>Edit</button>}
         {role === "administrator" && (
           <button
             type="button"
             className="secondary-button project-delete"
             onClick={handleDelete}
+            disabled={deleting}
           >
             Delete
           </button>
@@ -365,10 +373,13 @@ export function ProjectRow({ project: p }) {
           type="button"
           className="row-chevron icon-button"
           onClick={openClient}
+          aria-label={`View resources for ${p.name}`}
         >
           <ChevronRight size={19} />
         </button>
       </div>
     </div>
+    {showEdit && <EditProject project={p} close={() => setShowEdit(false)} />}
+    </>
   );
 }

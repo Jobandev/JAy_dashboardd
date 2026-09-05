@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { ChevronRight, CirclePlus, Pencil, Search, X } from "lucide-react";
 import { usePortalData } from "../data/PortalDataProvider";
 import { Shell } from "../components/Shell";
 import { PageHeader, PrimaryButton } from "../components/ui";
+
+import { ClientAccounts } from "../components/ClientAccounts";
+import { ToastContext } from "../lib/ToastContext";
 
 export function Clients() {
   const { clients } = usePortalData();
@@ -42,6 +45,7 @@ export function Clients() {
             <span>LAST ACTIVITY</span>
             <span />
           </div>
+          {!filtered.length && <p className="description">{clients.length ? "No clients match your search." : "No clients yet. Add an organisation to get started."}</p>}
           {filtered.map((c) => (
             <div className="client-row" key={c.id}>
               <div className="client-name">
@@ -72,6 +76,7 @@ export function Clients() {
             </div>
           ))}
         </div>
+        <ClientAccounts />
       </section>
       {showAdd && <AddClient close={() => setShowAdd(false)} />}
     </Shell>
@@ -80,6 +85,7 @@ export function Clients() {
 export function AddClient({ close }) {
   const { addClient } = usePortalData();
   const [saving, setSaving] = useState(false);
+  const { showToast } = useContext(ToastContext);
   const [error, setError] = useState("");
   const submit = async (e) => {
     e.preventDefault();
@@ -101,6 +107,7 @@ export function AddClient({ close }) {
           .toUpperCase(),
         color: "#bd6b66",
       });
+      showToast("Saved successfully", "success");
       close();
     } catch {
       setError("Unable to save this client. Please try again.");
@@ -147,7 +154,7 @@ export function AddClient({ close }) {
           <button type="button" className="secondary-button" onClick={close}>
             Cancel
           </button>
-          <PrimaryButton icon={CirclePlus}>
+          <PrimaryButton disabled={saving} icon={CirclePlus}>
             {saving ? "Saving…" : "Create client"}
           </PrimaryButton>
         </div>
@@ -159,6 +166,7 @@ export function AddClient({ close }) {
 export function EditClient({ client, close }) {
   const { updateClient } = usePortalData();
   const [saving, setSaving] = useState(false);
+  const { showToast } = useContext(ToastContext);
   const [error, setError] = useState("");
   const submit = async (e) => {
     e.preventDefault();
@@ -180,6 +188,7 @@ export function EditClient({ client, close }) {
           .toUpperCase(),
         color: form.get("color") || client.color,
       });
+      showToast("Saved successfully", "success");
       close();
     } catch (err) {
       console.error(err);
@@ -222,7 +231,7 @@ export function EditClient({ client, close }) {
           <button type="button" className="secondary-button" onClick={close}>
             Cancel
           </button>
-          <PrimaryButton icon={Pencil}>{saving ? "Saving…" : "Save changes"}</PrimaryButton>
+          <PrimaryButton disabled={saving} icon={Pencil}>{saving ? "Saving…" : "Save changes"}</PrimaryButton>
         </div>
       </form>
     </div>

@@ -1,6 +1,6 @@
 import { useContext, useState } from "react";
-import { NavLink, useLocation, useNavigate, useParams } from "react-router-dom";
-import { ArrowUpRight, Pencil, Trash2 } from "lucide-react";
+import { NavLink, useNavigate, useParams } from "react-router-dom";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { usePortalData } from "../data/PortalDataProvider";
 import { Shell } from "../components/Shell";
@@ -9,26 +9,25 @@ import { AssetCard } from "../components/AssetCard";
 import { ProjectRow } from "../components/ProjectRow";
 import { EditClient } from "./Clients";
 import { AddProject } from "./Projects";
+import { AddContentLink } from "./Content";
 import { ToastContext } from "../lib/ToastContext";
 
 export function ClientProfile() {
   const { id } = useParams();
-  const { clients, projects, assets, users, deleteClient } = usePortalData();
+  const { clients, projects, assets, users, deleteClient, loading } = usePortalData();
   const { role } = useAuth();
-  const canManage = role === "administrator" || role === "employee";
+  const canManage = role === "administrator";
   const canDelete = role === "administrator";
-  const location = useLocation();
   const navigate = useNavigate();
   const { showToast } = useContext(ToastContext);
   const [showEdit, setShowEdit] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [showAddResource, setShowAddResource] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const client = clients.find((c) => c.id === id);
-  const search = new URLSearchParams(location.search);
-  const showAllProjects = search.get('view') === 'projects';
   const handleDelete = async () => {
     if (!client) return;
-    if (!window.confirm(`Delete ${client.name}? This removes the client profile — its projects and content stay in the library but will no longer be linked to a client.`)) return;
+    if (!window.confirm(`Delete ${client.name}? This permanently removes its projects and resources, and unassigns its users. This cannot be undone.`)) return;
     setDeleting(true);
     try {
       await deleteClient(client.id);
@@ -36,7 +35,7 @@ export function ClientProfile() {
       navigate("/clients");
     } catch (err) {
       console.error("Unable to delete client", err);
-      showToast("Unable to delete client", "error");
+      showToast(err.message || "Unable to delete client", "error");
       setDeleting(false);
     }
   };
@@ -44,13 +43,14 @@ export function ClientProfile() {
     return (
       <Shell>
         <section className="page">
-          <p className="description">Client not found.</p>
+          <p className="description">{loading ? "Loading organisation..." : "Organisation not found or unavailable. Contact Jay if you need access."}</p>
         </section>
       </Shell>
     );
   return (
     <Shell>
       <section className="page">
+        {role === "administrator" && <NavLink className="back-link" to="/clients">Back to clients</NavLink>}
         <div className="client-hero">
           <span
             className="client-avatar large"
@@ -90,8 +90,9 @@ export function ClientProfile() {
               </div>
             </div>
             {(() => {
-              const clientProjects = projects.filter((p) => (p.clientId ? p.clientId === client.id : p.client === client.name));
-              const toShow = showAllProjects ? clientProjects : clientProjects.slice(0, 2);
+              const clientProjects = projects.filter((p) => p.clientId === client.id);
+              const toShow = clientProjects;
+              if (!toShow.length) return <p className="description">No projects have been shared with this organisation yet.</p>;
               return toShow.map((p) => (
                 <ProjectRow key={p.id || p.name} project={p} />
               ));
@@ -116,7 +117,7 @@ export function ClientProfile() {
               )}
               <div>
                 <dt>Client since</dt>
-                <dd>March 2024</dd>
+                <dd>{client.createdAt?.toDate ? client.createdAt.toDate().toLocaleDateString() : "Not recorded"}</dd>
               </div>
               <div>
                 <dt>Account manager</dt>
@@ -128,26 +129,24 @@ export function ClientProfile() {
         <section className="panel profile-content">
           <div className="panel-title">
             <div>
-              <p className="eyebrow">RECENT CONTENT</p>
-              <h2>Latest deliverables</h2>
+              <p className="eyebrow">PROJECT RESOURCES</p>
+              <h2>Everything Jay has shared</h2>
             </div>
-            <NavLink className="text-link" to="/content">
-              View library <ArrowUpRight size={15} />
-            </NavLink>
+            {canManage && <PrimaryButton icon={Plus} onClick={() => setShowAddResource(true)}>Add resource</PrimaryButton>}
           </div>
-          <div className="asset-row">
-            {assets
-              .filter((a) => (a.clientId ? a.clientId === client.id : a.client === client.name))
-              .slice(0, 3)
-              .map((a) => (
-                <AssetCard key={a.id} asset={a} compact />
-              ))}
-          </div>
+          {projects.filter((p) => p.clientId === client.id).map((project) => {
+            const projectAssets = assets.filter((asset) => asset.projectId === project.id && asset.clientId === client.id);
+            return <div className="project-resource-group" id={`project-${project.id}`} key={project.id || project.name}>
+              <div><h3>{project.name}</h3><p className="description">{project.description || "Resources shared for this project."}</p></div>
+              {projectAssets.length ? <div className="asset-row">{projectAssets.map((asset) => <AssetCard key={asset.id} asset={asset} compact />)}</div> : <p className="description">No resources have been added to this project yet.</p>}
+            </div>;
+          })}
+          {!projects.some((p) => p.clientId === client.id) && <p className="description">No projects or resources have been shared yet.</p>}
         </section>
         {showEdit && <EditClient client={client} close={() => setShowEdit(false)} />}
         {showCreate && <AddProject clients={clients} users={users} defaultClientId={client.id} close={() => setShowCreate(false)} />}
+        {showAddResource && <AddContentLink clients={[client]} projects={projects.filter((p) => p.clientId === client.id)} defaultClientId={client.id} close={() => setShowAddResource(false)} />}
       </section>
     </Shell>
   );
 }
-

@@ -1,6 +1,7 @@
 import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, query, setDoc, updateDoc, where, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { assets, clients, projects } from '../data/portalData'
 import { db } from './firebase'
+import { validateResource } from '../lib/resourceValidation'
 
 const collections = { clients: 'clients', projects: 'projects', assets: 'content', activities: 'activities', users: 'users' }
 
@@ -21,6 +22,14 @@ export async function seedPortalData() {
 // Deletes only the starter seed data (the current real client list plus its
 // starter projects), leaving anything added by hand untouched.
 export async function clearDemoData() {
+  const seededIds = new Set(clients.map(client => client.id))
+  const seededProjectIds = new Set(projects.map(project => project.name.toLowerCase().replaceAll(' ', '-')))
+  const [content, accounts, currentProjects] = await Promise.all([
+    getDocs(collection(db, collections.assets)), getDocs(collection(db, collections.users)), getDocs(collection(db, collections.projects)),
+  ])
+  if ([...content.docs, ...accounts.docs].some(entry => seededIds.has(entry.data().clientId)) || currentProjects.docs.some(entry => seededIds.has(entry.data().clientId) && !seededProjectIds.has(entry.id))) {
+    throw new Error('Starter organisations now contain client data. Remove them individually using the confirmed delete action.')
+  }
   const batch = writeBatch(db)
   clients.forEach(({ id }) => batch.delete(doc(db, collections.clients, id)))
   projects.forEach((project) => batch.delete(doc(db, collections.projects, project.name.toLowerCase().replaceAll(' ', '-'))))
@@ -28,10 +37,10 @@ export async function clearDemoData() {
   await batch.commit()
 }
 
-export function subscribeToCollection(name, onChange) {
+export function subscribeToCollection(name, onChange, onError) {
   return onSnapshot(collection(db, collections[name]), (snapshot) => {
     onChange(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() })))
-  })
+  }, onError)
 }
 
 // Same as subscribeToCollection but scoped to a single clientId. Used for
@@ -40,21 +49,21 @@ export function subscribeToCollection(name, onChange) {
 // filtered client-side. This needs a matching Firestore security rule
 // (see firestore.rules) to actually be enforced server-side — the query
 // filter alone is a convenience, not a security boundary.
-export function subscribeToClientScopedCollection(name, clientId, onChange) {
+export function subscribeToClientScopedCollection(name, clientId, onChange, onError) {
   const scoped = query(collection(db, collections[name]), where('clientId', '==', clientId))
   return onSnapshot(scoped, (snapshot) => {
     onChange(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() })))
-  })
+  }, onError)
 }
 
-export function subscribeToClientDoc(clientId, onChange) {
+export function subscribeToClientDoc(clientId, onChange, onError) {
   return onSnapshot(doc(db, collections.clients, clientId), (snapshot) => {
     onChange(snapshot.exists() ? [{ id: snapshot.id, ...snapshot.data() }] : [])
-  })
+  }, onError)
 }
 
 export function createClient(client) {
-  return addDoc(collection(db, collections.clients), { ...client, status: 'Active', projects: 0, lastActivity: 'Just now' })
+  return addDoc(collection(db, collections.clients), { ...client, createdAt: serverTimestamp(), status: 'Active', projects: 0, lastActivity: 'Just now' })
 }
 
 export function updateClient(id, updates) {
@@ -62,8 +71,19 @@ export function updateClient(id, updates) {
   return updateDoc(doc(db, collections.clients, id), updates)
 }
 
-export function deleteClient(id) {
-  return deleteDoc(doc(db, collections.clients, id))
+export async function deleteClient(id) {
+  const [projectSnapshot, contentSnapshot, userSnapshot] = await Promise.all([
+    getDocs(query(collection(db, collections.projects), where('clientId', '==', id))),
+    getDocs(query(collection(db, collections.assets), where('clientId', '==', id))),
+    getDocs(query(collection(db, collections.users), where('clientId', '==', id))),
+  ])
+  const batch = writeBatch(db)
+  if (projectSnapshot.size + contentSnapshot.size + userSnapshot.size >= 450) throw new Error('This organisation is too large for an atomic browser deletion. Remove its projects first.')
+  userSnapshot.docs.forEach(entry => batch.update(entry.ref, { clientId: null }))
+  projectSnapshot.docs.forEach((entry) => batch.delete(entry.ref))
+  contentSnapshot.docs.forEach((entry) => batch.delete(entry.ref))
+  batch.delete(doc(db, collections.clients, id))
+  return batch.commit()
 }
 
 export function updateProject(id, updates) {
@@ -71,11 +91,22 @@ export function updateProject(id, updates) {
   return updateDoc(doc(db, collections.projects, id), updates)
 }
 
-export function deleteProject(id) {
-  return deleteDoc(doc(db, collections.projects, id))
+export async function deleteProject(id) {
+  const resources = await getDocs(query(collection(db, collections.assets), where('projectId', '==', id)))
+  if (resources.size >= 450) throw new Error('This project is too large for an atomic browser deletion. Contact the administrator.')
+  const batch = writeBatch(db)
+  resources.docs.forEach(entry => batch.delete(entry.ref))
+  batch.delete(doc(db, collections.projects, id))
+  return batch.commit()
 }
 
-export function createContentLink(content) {
+async function checkResource(content) {
+  const project = content.projectId ? await getDoc(doc(db, collections.projects, content.projectId)) : null
+  validateResource(content, project?.exists() ? project.data() : null)
+}
+
+export async function createContentLink(content) {
+  await checkResource(content)
   return addDoc(collection(db, collections.assets), {
     ...content,
     postedAt: Date.now(),
@@ -87,7 +118,15 @@ export function deleteContent(id) {
   return deleteDoc(doc(db, collections.assets, id))
 }
 
-export function createProject(project) {
+export async function updateContent(id, updates) {
+  const current = await getDoc(doc(db, collections.assets, id))
+  if (!current.exists()) throw new Error('Resource no longer exists.')
+  await checkResource({ ...current.data(), ...updates })
+  return updateDoc(current.ref, updates)
+}
+
+export async function createProject(project) {
+  if (!project.clientId || !(await getDoc(doc(db, collections.clients, project.clientId))).exists()) throw new Error('Choose an existing organisation.')
   return addDoc(collection(db, collections.projects), { ...project, progress: 0, createdAt: serverTimestamp() })
 }
 

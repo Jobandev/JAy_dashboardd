@@ -1,16 +1,20 @@
+export function safeResourceUrl(value) {
+  try { const url = new URL(value); return ['https:', 'http:'].includes(url.protocol) ? url.href : ''; } catch { return ''; }
+}
+
 // Small pure helpers for turning share links into embeddable URLs / thumbnails.
-export function toEmbedUrl(url = "") {
-  if (url.includes("youtube.com/watch"))
-    return `https://www.youtube.com/embed/${new URL(url).searchParams.get(
-      "v"
-    )}`;
-  if (url.includes("youtu.be/"))
-    return `https://www.youtube.com/embed/${url.split("/").pop()}`;
-  if (url.includes("vimeo.com/"))
-    return `https://player.vimeo.com/video/${url.split("/").pop()}`;
-  const drive = url.match(/drive\.google\.com\/file\/d\/([^/]+)/);
-  if (drive) return `https://drive.google.com/file/d/${drive[1]}/preview`;
-  return url;
+export function toEmbedUrl(value = '') {
+  const safe = safeResourceUrl(value);
+  if (!safe) return '';
+  const url = new URL(safe), host = url.hostname.replace(/^www\./, '');
+  if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'youtu.be') {
+    const id = host === 'youtu.be' ? url.pathname.split('/')[1] : url.searchParams.get('v') || url.pathname.split('/')[2];
+    if (id && /^[a-zA-Z0-9_-]+$/.test(id)) return 'https://www.youtube.com/embed/' + id;
+  }
+  if (host === 'vimeo.com' && /^\/\d+$/.test(url.pathname)) return 'https://player.vimeo.com/video' + url.pathname;
+  const drive = host === 'drive.google.com' && url.pathname.match(/^\/file\/d\/([^/]+)/);
+  if (drive) return 'https://drive.google.com/file/d/' + drive[1] + '/preview';
+  return safe;
 }
 export function getContentThumbnail(asset = {}) {
   const explicit = asset.thumbnailUrl || asset.previewImage || asset.poster || asset.coverImage || asset.image;

@@ -16,7 +16,7 @@ export function Dashboard() {
   const navigate = useNavigate();
   const [showAddActivity, setShowAddActivity] = useState(false);
   if (role === "client") {
-    return <Navigate to={clientId ? `/clients/${clientId}` : "/settings"} replace />;
+    return clientId ? <Navigate to={`/clients/${clientId}`} replace /> : <Shell><section className="page"><PageHeader eyebrow="CLIENT DASHBOARD" title="Welcome to your dashboard" description="Your account is ready. Jay needs to assign your organisation before projects and resources become available." /></section></Shell>;
   }
   const visibleProjects = role === "administrator"
     ? projects

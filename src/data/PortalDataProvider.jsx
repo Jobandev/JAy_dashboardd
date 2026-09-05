@@ -8,6 +8,7 @@ import {
   deleteClient,
   updateProject,
   createContentLink,
+  updateContent,
   createProject,
   createActivity,
   updateActivity,
@@ -23,6 +24,12 @@ import {
 const PortalDataContext = createContext({ clients: [], projects: [], assets: [], users: [], loading: true, addClient: async () => {}, addContentLink: async () => {}, deleteProject: async () => {}, deleteContent: async () => {} })
 
 export function PortalDataProvider({ children }) {
+  const { user, role, clientId, loading } = useAuth()
+  if (loading) return <div className="auth-loading">Loading portal...</div>
+  return <ScopedPortalDataProvider key={[user?.uid, role, clientId].join(':')}>{children}</ScopedPortalDataProvider>
+}
+
+function ScopedPortalDataProvider({ children }) {
   const { user, role, clientId } = useAuth()
   const [clients, setClients] = useState([])
   const [projects, setProjects] = useState([])
@@ -30,6 +37,7 @@ export function PortalDataProvider({ children }) {
   const [activities, setActivities] = useState([])
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
 
   useEffect(() => {
     if (!user || !isFirebaseConfigured) {
@@ -41,11 +49,13 @@ export function PortalDataProvider({ children }) {
     // clientId — they never subscribe to the full clients/projects/content
     // collections. Pair this with matching Firestore security rules so the
     // restriction is enforced server-side too, not just in this UI.
+    let pending = role === 'client' ? 3 : 5
+    const receive = setter => { let first = true; return data => { setter(data); if (first) { first = false; pending -= 1; } if (pending <= 0) setLoading(false) } }
+    const fail = () => { setError('Unable to load dashboard data. Check your connection and account access, then reload.'); setLoading(false) }
     if (role === 'client' && clientId) {
-      setLoading(false)
-      const stopClient = subscribeToClientDoc(clientId, setClients)
-      const stopProjects = subscribeToClientScopedCollection('projects', clientId, setProjects)
-      const stopAssets = subscribeToClientScopedCollection('assets', clientId, setAssets)
+      const stopClient = subscribeToClientDoc(clientId, receive(setClients), fail)
+      const stopProjects = subscribeToClientScopedCollection('projects', clientId, receive(setProjects), fail)
+      const stopAssets = subscribeToClientScopedCollection('assets', clientId, receive(setAssets), fail)
       setActivities([])
       setUsers([])
       return () => { stopClient(); stopProjects(); stopAssets() }
@@ -60,23 +70,23 @@ export function PortalDataProvider({ children }) {
     const setup = async () => {
       try {
         await seedPortalData()
-        if (active) setLoading(false)
+        // Snapshot callbacks complete the loading state.
       } catch (error) {
         console.error('Unable to load portal data.', error)
         if (active) setLoading(false)
       }
     }
     setup()
-    const stopClients = subscribeToCollection('clients', setClients)
-    const stopProjects = subscribeToCollection('projects', setProjects)
-    const stopAssets = subscribeToCollection('assets', setAssets)
-    const stopActivities = subscribeToCollection('activities', setActivities)
-    const stopUsers = subscribeToCollection('users', setUsers)
+    const stopClients = subscribeToCollection('clients', receive(setClients), fail)
+    const stopProjects = subscribeToCollection('projects', receive(setProjects), fail)
+    const stopAssets = subscribeToCollection('assets', receive(setAssets), fail)
+    const stopActivities = subscribeToCollection('activities', receive(setActivities), fail)
+    const stopUsers = subscribeToCollection('users', receive(setUsers), fail)
     return () => { active = false; stopClients(); stopProjects(); stopAssets(); stopActivities(); stopUsers() }
   }, [user, role, clientId])
 
-  const value = useMemo(() => ({ clients, projects, assets, activities, users, loading, addClient: createClient, updateClient: updateClient, deleteClient, updateProject: updateProject, addContentLink: createContentLink, addProject: createProject, addActivity: createActivity, updateActivity, deleteActivity, deleteProject, deleteContent, clearDemoData }), [clients, projects, assets, activities, users, loading])
-  return <PortalDataContext.Provider value={value}>{children}</PortalDataContext.Provider>
+  const value = useMemo(() => ({ clients, projects, assets, activities, users, loading, addClient: createClient, updateClient: updateClient, deleteClient, updateProject: updateProject, addContentLink: createContentLink, updateContent, addProject: createProject, addActivity: createActivity, updateActivity, deleteActivity, deleteProject, deleteContent, clearDemoData }), [clients, projects, assets, activities, users, loading])
+  return <PortalDataContext.Provider value={value}>{error && <p role="alert" className="form-error">{error}</p>}{children}</PortalDataContext.Provider>
 }
 
 export const usePortalData = () => useContext(PortalDataContext)

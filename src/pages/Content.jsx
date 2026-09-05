@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { ToastContext } from "../lib/ToastContext";
+import { useContext, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { ChevronDown, Play, Plus, Search, X } from "lucide-react";
 import { usePortalData } from "../data/PortalDataProvider";
@@ -11,7 +12,7 @@ import { CONTENT_TYPES } from "../lib/contentTypes";
 import { contentPostedAt } from "../lib/contentDate";
 
 export function Content() {
-  const { assets, clients } = usePortalData();
+  const { assets, clients, projects } = usePortalData();
   const { role } = useAuth();
   const location = useLocation();
   const [filter, setFilter] = useState("All content");
@@ -123,10 +124,9 @@ export function Content() {
         ) : (
           <div className="empty-feature">
             <p className="eyebrow">CONTENT LIBRARY</p>
-            <h2>Add your first delivery</h2>
+            <h2>{role === "administrator" ? "Add your first delivery" : "No resources shared yet"}</h2>
             <p>
-              Save a video, image, or document share link to start your client
-              library.
+              {role === "administrator" ? "Add a resource to a client project to get started." : "Resources Jay shares with your organisation will appear here and under the relevant project."}
             </p>
           </div>
         )}
@@ -138,6 +138,7 @@ export function Content() {
             {sortNewest ? "Newest first" : "Oldest first"} <ChevronDown size={16} />
           </button>
         </div>
+        {!shown.length && assets.length > 0 && <p className="description">No resources match your search or filter.</p>}
         <div className="asset-grid">
           {shown.map((a) => (
             <AssetCard key={a.id} asset={a} />
@@ -145,7 +146,7 @@ export function Content() {
         </div>
       </section>
       {showAddLink && (
-        <AddContentLink clients={clients} close={() => setShowAddLink(false)} />
+        <AddContentLink clients={clients} projects={projects} close={() => setShowAddLink(false)} />
       )}{" "}
       {viewing && (
         <MediaViewer asset={viewing} close={() => setViewing(null)} />
@@ -153,12 +154,14 @@ export function Content() {
     </Shell>
   );
 }
-export function AddContentLink({ clients, close }) {
+export function AddContentLink({ clients, projects = [], close, defaultClientId = "" }) {
   const { addContentLink } = usePortalData();
   const [saving, setSaving] = useState(false);
+  const { showToast } = useContext(ToastContext);
   const [error, setError] = useState("");
   const [type, setType] = useState("Video");
   const isTestimonial = type === "Testimonial";
+  const [selectedClientId, setSelectedClientId] = useState(defaultClientId);
   const submit = async (e) => {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
@@ -177,6 +180,7 @@ export function AddContentLink({ clients, close }) {
       await addContentLink({
         clientId: client.id,
         client: client.name,
+        projectId: form.get("projectId"),
         title: form.get("title"),
         description: form.get("description") || (isTestimonial ? `“${quoteText}”${quoteAuthor ? ` — ${quoteAuthor}` : ""}` : ""),
         type,
@@ -185,6 +189,7 @@ export function AddContentLink({ clients, close }) {
         externalUrl: externalUrl || "",
         thumbnailUrl: thumbnailUrl || (externalUrl ? getContentThumbnail({ url: externalUrl }) : null),
       });
+      showToast("Saved successfully", "success");
       close();
     } catch (err) {
       console.error(err);
@@ -207,7 +212,7 @@ export function AddContentLink({ clients, close }) {
         </p>
         <label>
           Client
-          <select name="clientId" required defaultValue="">
+          <select name="clientId" required value={selectedClientId} onChange={e => setSelectedClientId(e.target.value)}>
             <option value="" disabled>
               Select a client
             </option>
@@ -216,6 +221,13 @@ export function AddContentLink({ clients, close }) {
                 {client.name}
               </option>
             ))}
+          </select>
+        </label>
+        <label>
+          Project
+          <select key={selectedClientId} name="projectId" required defaultValue="">
+            <option value="" disabled>Select a project</option>
+            {projects.filter(project => project.clientId === selectedClientId).map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
           </select>
         </label>
         <label>
@@ -288,7 +300,7 @@ export function AddContentLink({ clients, close }) {
           <button type="button" className="secondary-button" onClick={close}>
             Cancel
           </button>
-          <PrimaryButton icon={Plus}>
+          <PrimaryButton disabled={saving} icon={Plus}>
             {saving ? "Saving…" : "Add content link"}
           </PrimaryButton>
         </div>

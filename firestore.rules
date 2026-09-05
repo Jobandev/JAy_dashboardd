@@ -1,66 +1,35 @@
 rules_version = '2';
-
-// DRAFT — not yet deployed. This sketches the access model the app's data
-// layer already assumes (see PortalDataProvider.jsx / portalService.js) so
-// that client-role accounts are actually restricted server-side, not just
-// hidden in the UI. Review and deploy via `firebase deploy --only firestore:rules`
-// once real client-role accounts are being provisioned.
-//
-// Roles live on users/{uid}: { role: 'administrator' | 'client', clientId }
-// clients/projects/content documents carry a clientId field identifying
-// which organisation they belong to.
-
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    function signedIn() {
-      return request.auth != null;
-    }
-
-    function profile() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-
-    function isAdmin() {
-      return signedIn() && profile().role == 'administrator';
-    }
-
-    function isOwnClient(clientId) {
-      return signedIn() && profile().role == 'client' && profile().clientId == clientId;
-    }
-
+    function signedIn() { return request.auth != null; }
+    function profile() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function isAdmin() { return signedIn() && profile().role == 'administrator'; }
+    function ownClient(id) { return signedIn() && id is string && profile().role == 'client' && profile().clientId == id && exists(/databases/$(database)/documents/clients/$(id)); }
+    function validAssignment(data) { return data.role == 'client' && (data.clientId == null || (data.clientId is string && exists(/databases/$(database)/documents/clients/$(data.clientId)))); }
+    function validProject(data) { return data.clientId is string && getAfter(/databases/$(database)/documents/clients/$(data.clientId)).data.name is string; }
+    function validContent(data) { return validProject(data) && data.projectId is string && getAfter(/databases/$(database)/documents/projects/$(data.projectId)).data.clientId == data.clientId; }
     match /users/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
-      // Only an admin can change someone's role/clientId assignment.
-      allow create: if signedIn() && request.auth.uid == uid
-        && request.resource.data.role == 'client'
-        && request.resource.data.clientId == null;
-      allow update: if isAdmin() || (signedIn() && request.auth.uid == uid
-        && request.resource.data.role == resource.data.role
-        && request.resource.data.clientId == resource.data.clientId);
+      allow create: if (isAdmin() && validAssignment(request.resource.data)) || (signedIn() && request.auth.uid == uid && request.resource.data.role == 'client' && request.resource.data.clientId == null);
+      allow update: if (isAdmin() && (validAssignment(request.resource.data) || (request.resource.data.role == resource.data.role && request.resource.data.clientId == resource.data.clientId))) || (signedIn() && request.auth.uid == uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'contact', 'photoURL']));
     }
-
     match /clients/{clientId} {
-      allow read: if isAdmin() || isOwnClient(clientId);
+      allow read: if isAdmin() || ownClient(clientId);
       allow write: if isAdmin();
     }
-
     match /projects/{projectId} {
-      allow read: if isAdmin() || isOwnClient(resource.data.clientId);
-      allow write: if isAdmin();
+      allow read: if isAdmin() || ownClient(resource.data.clientId);
+      allow create: if isAdmin() && validProject(request.resource.data);
+      allow update: if isAdmin() && validProject(request.resource.data) && request.resource.data.clientId == resource.data.clientId;
+      allow delete: if isAdmin();
     }
-
     match /content/{contentId} {
-      allow read: if isAdmin() || isOwnClient(resource.data.clientId);
-      allow write: if isAdmin();
+      allow read: if isAdmin() || ownClient(resource.data.clientId);
+      allow create: if isAdmin() && validContent(request.resource.data);
+      allow update: if isAdmin() && validContent(request.resource.data) && request.resource.data.clientId == resource.data.clientId;
+      allow delete: if isAdmin();
     }
-
-    match /activities/{activityId} {
-      allow read, write: if isAdmin();
-    }
-
-    match /portalMeta/{docId} {
-      allow read, write: if isAdmin();
-    }
+    match /activities/{activityId} { allow read, write: if isAdmin(); }
+    match /portalMeta/{id} { allow read, write: if isAdmin(); }
   }
 }

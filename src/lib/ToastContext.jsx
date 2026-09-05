@@ -19,7 +19,7 @@ export function ToastProvider({ children }) {
       {children}
       {toast && (
         <div
-          className={`toast ${toast.type}`}
+          role="status" aria-live="polite" className={`toast ${toast.type}`}
           style={{ position: "fixed", right: 20, bottom: 20, zIndex: 60 }}
         >
           {toast.message}
