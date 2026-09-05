@@ -3,7 +3,20 @@ import { assets, clients, projects } from '../data/portalData'
 import { db } from './firebase'
 import { validateResource } from '../lib/resourceValidation'
 
-const collections = { clients: 'clients', projects: 'projects', assets: 'content', activities: 'activities', users: 'users' }
+const collections = { clients: 'clients', projects: 'projects', assets: 'content', activities: 'activities', users: 'users', feedback: 'resourceFeedback' }
+
+export async function saveResourceFeedback(resourceId, userId, status, note = '') {
+  if (!resourceId || !userId || !['viewed', 'needs-discussion'].includes(status)) throw new Error('Invalid resource feedback.')
+  const resource = await getDoc(doc(db, collections.assets, resourceId))
+  if (!resource.exists()) throw new Error('Resource no longer exists.')
+  return setDoc(doc(db, collections.feedback, `${resourceId}_${userId}`), { resourceId, userId, clientId: resource.data().clientId, status, note: note.trim().slice(0, 500), updatedAt: serverTimestamp() }, { merge: true })
+}
+
+export async function getResourceFeedback(resourceId, userId) {
+  if (!resourceId || !userId) return null
+  const snapshot = await getDoc(doc(db, collections.feedback, `${resourceId}_${userId}`))
+  return snapshot.exists() ? snapshot.data() : null
+}
 
 export async function seedPortalData() {
   const metaRef = doc(db, 'portalMeta', 'seed')

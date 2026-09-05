@@ -2,12 +2,13 @@ import { createPortal } from "react-dom";
 import { ToastContext } from "../lib/ToastContext";
 import { safeResourceUrl } from "../lib/media";
 import { useContext, useEffect, useRef, useState } from "react";
-import { ArrowUpRight, FileText, Pencil, Play, X } from "lucide-react";
+import { ArrowUpRight, Check, FileText, MessageCircle, Pencil, Play, X } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { usePortalData } from "../data/PortalDataProvider";
 import { getContentThumbnail, toEmbedUrl } from "../lib/media";
 import { CONTENT_TYPES, typeIcon } from "../lib/contentTypes";
 import { formatContentPostedAt } from "../lib/contentDate";
+import { getResourceFeedback, saveResourceFeedback } from "../firebase/portalService";
 
 export function MediaViewer({ asset, close }) {
   const ref = useRef(null);
@@ -51,12 +52,24 @@ export function AssetCard({ asset, compact = false }) {
   const [deleting, setDeleting] = useState(false);
   const [editing, setEditing] = useState(false);
   const { showToast } = useContext(ToastContext);
-  const { deleteContent } = usePortalData();
-  const { role } = useAuth();
+  const { deleteContent, projects } = usePortalData();
+  const { role, user } = useAuth();
+  const [feedback, setFeedback] = useState(null);
+  const [feedbackSaving, setFeedbackSaving] = useState(false);
   const canManage = role === "administrator";
   const Icon = typeIcon[asset.type] || FileText;
   const contentUrl = safeResourceUrl(asset.url || asset.externalUrl);
   const previewUrl = getContentThumbnail(asset);
+  const projectName = projects.find(project => project.id === asset.projectId)?.name;
+  useEffect(() => {
+    if (role === 'client' && user?.uid && asset.id) getResourceFeedback(asset.id, user.uid).then(setFeedback).catch(() => {});
+  }, [asset.id, role, user?.uid]);
+  const setClientFeedback = async (status) => {
+    setFeedbackSaving(true);
+    try { await saveResourceFeedback(asset.id, user.uid, status); setFeedback({ status }); showToast(status === 'viewed' ? 'Marked as viewed' : 'Jay will see this needs discussion', 'success'); }
+    catch (error) { showToast(error.message || 'Unable to save feedback', 'error'); }
+    finally { setFeedbackSaving(false); }
+  };
   const imageStyle = previewUrl
     ? {
         backgroundImage: `linear-gradient(180deg,transparent 35%,#09090d99), url("${previewUrl}")`,
@@ -101,10 +114,15 @@ export function AssetCard({ asset, compact = false }) {
             <span>·</span>
             {formatContentPostedAt(asset)}
           </p>
+          {projectName && <p className="asset-project"><span>PROJECT</span>{projectName}</p>}
           <p className="asset-description">
             {asset.description || "No description added."}
           </p>
           <div className="asset-actions">
+            {role === 'client' && <>
+              <button className={`feedback-button ${feedback?.status === 'viewed' ? 'selected' : ''}`} disabled={feedbackSaving} onClick={() => setClientFeedback('viewed')}><Check size={14} /> Viewed</button>
+              <button className={`feedback-button ${feedback?.status === 'needs-discussion' ? 'selected discussion' : ''}`} disabled={feedbackSaving} onClick={() => setClientFeedback('needs-discussion')}><MessageCircle size={14} /> Needs discussion</button>
+            </>}
             {canManage && <button className="asset-open" onClick={() => setEditing(true)}><Pencil size={12} /> Edit</button>}
             {(contentUrl || asset.type === "Testimonial") && (
               <button className="asset-open" onClick={() => setViewing(true)}>

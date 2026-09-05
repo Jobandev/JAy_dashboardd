@@ -2155,6 +2155,12 @@ body,
 .asset-actions { flex-wrap: wrap; justify-content: flex-start; gap: 8px; }
 .asset-actions > button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 38px; padding: 8px 10px; margin: 0; white-space: nowrap; flex-shrink: 0; font-size: 12px; }
 .asset-actions > .asset-delete { margin-left: auto; }
+.asset-project { color: #c7c9c7 !important; font-size: 11px !important; }
+.asset-project span { color: #888d8c !important; font: 10px "DM Mono"; margin-right: 7px; letter-spacing: .6px; }
+.feedback-button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 34px; padding: 7px 9px; border: 1px solid #3a4143; border-radius: 5px; background: #171b1e; color: #cdd2d0; font-size: 11px; font-weight: 700; cursor: pointer; }
+.feedback-button:hover, .feedback-button.selected { border-color: #72b58c; background: #183528; color: #a8e2bb; }
+.feedback-button.selected.discussion { border-color: #d29a57; background: #382818; color: #f0c27e; }
+.feedback-button:disabled { opacity: .6; cursor: wait; }
 .settings-panel select { width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid #393d3c; border-radius: 6px; background: #141617; color: #f4f3ef; font: inherit; color-scheme: dark; }
 .settings-panel select:focus-visible, .back-link:focus-visible { outline: 2px solid #f06b65; outline-offset: 3px; }
 .user-access-row { align-items: flex-end; gap: 16px; padding: 20px 0; }
