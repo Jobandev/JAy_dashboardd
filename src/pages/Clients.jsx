@@ -1,5 +1,5 @@
 import { useContext, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { ChevronRight, CirclePlus, Pencil, Search, X } from "lucide-react";
 import { usePortalData } from "../data/PortalDataProvider";
 import { Shell } from "../components/Shell";
@@ -47,7 +47,7 @@ export function Clients() {
           </div>
           {!filtered.length && <p className="description">{clients.length ? "No clients match your search." : "No clients yet. Add an organisation to get started."}</p>}
           {filtered.map((c) => (
-            <div className="client-row" key={c.id}>
+            <Link className="client-row" key={c.id} to={`/clients/${c.id}`} aria-label={`Open ${c.name} profile`}>
               <div className="client-name">
                 <span
                   className="client-avatar"
@@ -55,9 +55,9 @@ export function Clients() {
                 >
                   {c.initials}
                 </span>
-                <NavLink className="client-name-link" to={`/clients/${c.id}`}>
+                <span className="client-name-link">
                   <b>{c.name}</b>
-                </NavLink>
+                </span>
               </div>
               <div className="contact">
                 <b>{c.contact}</b>
@@ -69,11 +69,8 @@ export function Clients() {
                 {c.status}
               </span>
               <span className="muted">{c.lastActivity}</span>
-              <NavLink to={`/clients/${c.id}?view=projects`} className="text-link small">View projects</NavLink>
-              <NavLink to={`/clients/${c.id}`} className="row-chevron icon-button" aria-label={`View ${c.name}`}>
-                <ChevronRight size={18} />
-              </NavLink>
-            </div>
+              <span className="text-link small client-row-action">View profile <ChevronRight size={18} aria-hidden="true" /></span>
+            </Link>
           ))}
         </div>
         <ClientAccounts />

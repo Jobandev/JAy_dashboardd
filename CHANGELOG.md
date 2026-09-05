@@ -34,3 +34,9 @@ Audit old content for correct clientId/projectId values, deploy/test Firestore r
 - Long organisation names no longer squeeze Edit/Delete/New project buttons.
 - Account dropdowns match the dark theme; Save access and Delete access align and wrap on mobile.
 - Delete access confirms removal, clears organisation assignment and archives the portal profile. Firebase Authentication logins are retained; organisation/project records are untouched. No new Firestore rule deployment is required for this action.
+
+## Navigation and client project panels
+
+- Dashboard summary cards link to Clients, Projects and Content library.
+- Entire client rows are keyboard-accessible profile links, including contact/status areas.
+- Project names and Edit/Delete controls fit inside the client profile panel using a responsive two-column layout.

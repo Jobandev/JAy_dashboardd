@@ -1,5 +1,5 @@
 import { useContext, useState } from "react";
-import { NavLink, Navigate, useNavigate } from "react-router-dom";
+import { Link, NavLink, Navigate, useNavigate } from "react-router-dom";
 import { ArrowUpRight, FolderKanban, Film, Pencil, Trash2, Users } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { usePortalData } from "../data/PortalDataProvider";
@@ -38,18 +38,21 @@ export function Dashboard() {
           <Stat
             icon={Users}
             label="Active clients"
+            to="/clients"
             value={clients.length}
             change="Live Firestore data"
           />
           <Stat
             icon={FolderKanban}
             label="Live projects"
+            to="/projects"
             value={visibleProjects.length}
             change="Production pipeline"
           />
           <Stat
             icon={Film}
             label="Content delivered"
+            to="/content"
             value={assets.length}
             change="In content library"
           />
@@ -118,9 +121,9 @@ export function Dashboard() {
   );
 }
 
-export function Stat({ icon: Icon, label, value, change }) {
+export function Stat({ icon: Icon, label, value, change, to }) {
   return (
-    <div className="stat-card">
+    <Link to={to} className="stat-card stat-link" aria-label={`Open ${label === "Content delivered" ? "content library" : label.toLowerCase()}`}>
       <div className="stat-icon">
         <Icon size={18} />
       </div>
@@ -129,7 +132,8 @@ export function Stat({ icon: Icon, label, value, change }) {
         <h2>{value}</h2>
         <span>{change}</span>
       </div>
-    </div>
+      <ArrowUpRight className="stat-link-arrow" size={18} aria-hidden="true" />
+    </Link>
   );
 }
 
