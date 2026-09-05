@@ -2161,6 +2161,10 @@ body,
 .feedback-button:hover, .feedback-button.selected { border-color: #72b58c; background: #183528; color: #a8e2bb; }
 .feedback-button.selected.discussion { border-color: #d29a57; background: #382818; color: #f0c27e; }
 .feedback-button:disabled { opacity: .6; cursor: wait; }
+.feedback-panel { margin-top: 16px; }
+.feedback-count { min-width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: #382818; color: #f0c27e; font-weight: 700; }
+.feedback-item { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-top: 1px solid #2b3033; }
+.feedback-item > span { color: #f0c27e; font-size: 11px; font-weight: 700; white-space: nowrap; }
 .settings-panel select { width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid #393d3c; border-radius: 6px; background: #141617; color: #f4f3ef; font: inherit; color-scheme: dark; }
 .settings-panel select:focus-visible, .back-link:focus-visible { outline: 2px solid #f06b65; outline-offset: 3px; }
 .user-access-row { align-items: flex-end; gap: 16px; padding: 20px 0; }

@@ -11,7 +11,7 @@ import { AddActivity } from "./Projects";
 import { ToastContext } from "../lib/ToastContext";
 
 export function Dashboard() {
-  const { clients, assets, projects, activities, addActivity } = usePortalData();
+  const { clients, assets, projects, activities, feedback, addActivity } = usePortalData();
   const { user, role, clientId } = useAuth();
   const navigate = useNavigate();
   const [showAddActivity, setShowAddActivity] = useState(false);
@@ -114,6 +114,18 @@ export function Dashboard() {
           {visibleProjects.map((p) => (
             <ProjectRow key={p.id || p.name} project={p} />
           ))}
+        </section>
+        <section className="panel feedback-panel">
+          <div className="panel-title">
+            <div><p className="eyebrow">CLIENT FEEDBACK</p><h2>Needs your attention</h2></div>
+            <span className="feedback-count">{feedback?.filter(item => item.status === 'needs-discussion').length || 0}</span>
+          </div>
+          {feedback?.filter(item => item.status === 'needs-discussion').length ? feedback.filter(item => item.status === 'needs-discussion').map(item => {
+            const resource = assets.find(asset => asset.id === item.resourceId);
+            const project = projects.find(project => project.id === resource?.projectId);
+            const client = clients.find(client => client.id === item.clientId);
+            return <div className="feedback-item" key={item.id}><div><b>{resource?.title || 'Resource'}</b><p className="muted">{client?.name || 'Client'}{project ? ` · ${project.name}` : ''}</p></div><span>Needs discussion</span></div>;
+          }) : <p className="description">No client feedback needs attention.</p>}
         </section>
       {showAddActivity && <AddActivity projects={projects} addActivity={addActivity} close={() => setShowAddActivity(false)} user={user} />}
       </section>
