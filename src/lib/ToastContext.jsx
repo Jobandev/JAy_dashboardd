@@ -17,7 +17,7 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={{ toast, showToast }}>
       {children}
-      {toast && (
+      {toast && toast.type === "error" && (
         <div
           role="status" aria-live="polite" className={`toast ${toast.type}`}
           style={{ position: "fixed", right: 20, bottom: 20, zIndex: 60 }}
