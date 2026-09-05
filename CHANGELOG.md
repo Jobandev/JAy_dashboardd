@@ -40,3 +40,9 @@ Audit old content for correct clientId/projectId values, deploy/test Firestore r
 - Dashboard summary cards link to Clients, Projects and Content library.
 - Entire client rows are keyboard-accessible profile links, including contact/status areas.
 - Project names and Edit/Delete controls fit inside the client profile panel using a responsive two-column layout.
+
+## Client contact numbers
+
+- Added contact number fields when creating and editing an organisation.
+- Added contact number when creating a client login and showed it in the account list.
+- Organisation profiles display the saved contact number.

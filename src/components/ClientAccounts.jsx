@@ -24,6 +24,7 @@ export function ClientAccounts() {
     <form onSubmit={create}>
       <label>Full name<input name="displayName" required /></label>
       <label>Email<input name="email" type="email" required /></label>
+      <label>Contact number<input name="contactNumber" type="tel" placeholder="e.g. 021 123 4567" /></label>
       <label>Initial password<input name="password" type="password" minLength={8} autoComplete="new-password" required /></label>
       <label>Organisation<select name="clientId" required defaultValue=""><option value="" disabled>Select organisation</option>{clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
       <p className="description">Share the initial credentials privately. The client can use Forgot password on the login page to choose their own password.</p>
@@ -54,7 +55,7 @@ function AccountAssignment({ account, clients }) {
     finally { setDeleting(false); }
   }
   return <form className="user-access-row" onSubmit={save}>
-    <label>{account.displayName || account.email}<small>{account.email}</small>
+    <label>{account.displayName || account.email}<small>{account.email}{account.contactNumber && ` · ${account.contactNumber}`}</small>
       <select aria-label={'Organisation for ' + account.email} value={clientId} disabled={saving || deleting} onChange={e => setClientId(e.target.value)}>
         <option value="">Unassigned - no organisation access</option>
         {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}

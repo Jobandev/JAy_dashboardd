@@ -109,6 +109,10 @@ export function ClientProfile() {
                 <dt>Contact email</dt>
                 <dd>{client.email}</dd>
               </div>
+              {client.contactNumber && <div>
+                <dt>Contact number</dt>
+                <dd>{client.contactNumber}</dd>
+              </div>}
               {client.companyEmail && (
                 <div>
                   <dt>Company email</dt>

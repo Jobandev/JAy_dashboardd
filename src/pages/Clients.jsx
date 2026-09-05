@@ -95,6 +95,7 @@ export function AddClient({ close }) {
         name,
         contact: form.get("contact"),
         email: form.get("email"),
+        contactNumber: form.get("contactNumber"),
         companyEmail: form.get("companyEmail"),
         initials: name
           .split(" ")
@@ -139,6 +140,10 @@ export function AddClient({ close }) {
           />
         </label>
         <label>
+          Contact number
+          <input name="contactNumber" type="tel" placeholder="e.g. 021 123 4567" />
+        </label>
+        <label>
           Company email address
           <input
             name="companyEmail"
@@ -176,6 +181,7 @@ export function EditClient({ client, close }) {
         name,
         contact: form.get("contact"),
         email: form.get("email"),
+        contactNumber: form.get("contactNumber"),
         companyEmail: form.get("companyEmail"),
         initials: name
           .split(" ")
@@ -214,6 +220,10 @@ export function EditClient({ client, close }) {
         <label>
           Contact email
           <input name="email" type="email" defaultValue={client.email} required />
+        </label>
+        <label>
+          Contact number
+          <input name="contactNumber" type="tel" defaultValue={client.contactNumber} placeholder="e.g. 021 123 4567" />
         </label>
         <label>
           Company email address

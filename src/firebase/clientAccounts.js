@@ -3,7 +3,7 @@ import { initializeAuth, inMemoryPersistence, createUserWithEmailAndPassword, up
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 
-export async function createClientAccount({ email, password, displayName, clientId }) {
+export async function createClientAccount({ email, password, displayName, contactNumber, clientId }) {
   if (!auth?.currentUser || !clientId) throw new Error('Select an organisation.');
   const admin = await getDoc(doc(db, 'users', auth.currentUser.uid));
   if (admin.data()?.role !== 'administrator') throw new Error('Administrator access required.');
@@ -13,7 +13,7 @@ export async function createClientAccount({ email, password, displayName, client
   try {
     created = (await createUserWithEmailAndPassword(secondary, email.trim(), password)).user;
     await updateProfile(created, { displayName: displayName.trim() });
-    await setDoc(doc(db, 'users', created.uid), { email: created.email, displayName: displayName.trim(), role: 'client', clientId, contact: '', photoURL: '' });
+    await setDoc(doc(db, 'users', created.uid), { email: created.email, displayName: displayName.trim(), role: 'client', clientId, contact: contactNumber?.trim() || '', contactNumber: contactNumber?.trim() || '', photoURL: '' });
   } catch (error) {
     if (created) {
       try { await deleteUser(created); }
