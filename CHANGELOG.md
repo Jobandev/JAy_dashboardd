@@ -26,3 +26,11 @@ Built on the existing dashboard and preserved the pre-existing work in the works
 ## Remaining production checks
 
 Audit old content for correct clientId/projectId values, deploy/test Firestore rules with two client accounts, run the README desktop/mobile checklist, and verify the production deployment. External resource providers retain their own sharing permissions. Authentication-account deletion is not part of organisation deletion.
+
+## Button and account-list polish
+
+- Back to clients is a compact outlined button with an arrow.
+- Resource cards use responsive widths and wrapping actions so Delete remains visible.
+- Long organisation names no longer squeeze Edit/Delete/New project buttons.
+- Account dropdowns match the dark theme; Save access and Delete access align and wrap on mobile.
+- Delete access confirms removal, clears organisation assignment and archives the portal profile. Firebase Authentication logins are retained; organisation/project records are untouched. No new Firestore rule deployment is required for this action.

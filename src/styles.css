@@ -2137,3 +2137,35 @@ body,
 
 .modal { max-height: calc(100dvh - 40px); overflow-y: auto; }
 .client-table + .settings-panel { margin-top: 24px; padding: 24px; }
+
+/* Responsive controls for client profiles, resource cards and account access. */
+.back-link { display: inline-flex; width: fit-content; padding: 10px 14px; min-height: 42px; background: #191b1f; color: #ececea; border: 1px solid #34373d; border-radius: 6px; font-weight: 600; margin-bottom: 24px; }
+.back-link:hover { background: #22252a; border-color: #565b63; }
+.client-hero { flex-wrap: wrap; align-items: center; }
+.client-hero > .client-avatar { flex-shrink: 0; }
+.client-hero-details { flex: 1 1 320px; min-width: 0; }
+.client-hero-details h1 { overflow-wrap: anywhere; }
+.client-hero-details p { overflow-wrap: anywhere; }
+.hero-actions { flex: 0 1 auto; flex-wrap: wrap; gap: 10px; }
+.hero-actions > button { margin: 0; min-height: 44px; padding: 12px 18px; justify-content: center; white-space: nowrap; flex-shrink: 0; font-size: 13px; }
+.hero-actions > button svg { flex-shrink: 0; }
+.dashboard-grid > *, .profile-grid > *, .asset-card { min-width: 0; }
+.asset-row { grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 16px; }
+.asset-row .asset-card:last-child { display: block; }
+.asset-actions { flex-wrap: wrap; justify-content: flex-start; gap: 8px; }
+.asset-actions > button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 38px; padding: 8px 10px; margin: 0; white-space: nowrap; flex-shrink: 0; font-size: 12px; }
+.asset-actions > .asset-delete { margin-left: auto; }
+.settings-panel select { width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid #393d3c; border-radius: 6px; background: #141617; color: #f4f3ef; font: inherit; color-scheme: dark; }
+.settings-panel select:focus-visible, .back-link:focus-visible { outline: 2px solid #f06b65; outline-offset: 3px; }
+.user-access-row { align-items: flex-end; gap: 16px; padding: 20px 0; }
+.user-access-row label { flex: 1 1 280px; min-width: 0; margin-top: 0; overflow-wrap: anywhere; }
+.user-access-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.user-access-actions > button { margin: 0; min-height: 44px; padding: 10px 16px; justify-content: center; white-space: nowrap; }
+.user-access-actions > button:disabled { opacity: .55; cursor: not-allowed; }
+@media (max-width: 560px) {
+  .client-hero-details { flex-basis: calc(100% - 80px); }
+  .hero-actions { margin-left: 0; width: 100%; }
+  .hero-actions > button { flex: 1 1 140px; }
+  .user-access-actions { width: 100%; }
+  .user-access-actions > button { flex: 1 1 140px; }
+}

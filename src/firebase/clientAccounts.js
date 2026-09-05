@@ -29,3 +29,11 @@ export async function createClientAccount({ email, password, displayName, client
 export async function assignClientAccount(uid, clientId) {
   return updateDoc(doc(db, 'users', uid), { role: 'client', clientId: clientId || null });
 }
+
+// Keep the profile so signing in again cannot recreate an assigned account.
+export async function removeClientAccess(uid) {
+  const ref = doc(db, 'users', uid);
+  const snapshot = await getDoc(ref);
+  if (!snapshot.exists() || snapshot.data().role !== 'client') throw new Error('Only client access can be removed here.');
+  return updateDoc(ref, { clientId: null, archived: true });
+}

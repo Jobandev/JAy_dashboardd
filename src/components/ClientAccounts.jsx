@@ -1,6 +1,7 @@
+import { Trash2 } from 'lucide-react';
 import { useContext, useState } from 'react';
 import { usePortalData } from '../data/PortalDataProvider';
-import { createClientAccount, assignClientAccount } from '../firebase/clientAccounts';
+import { createClientAccount, assignClientAccount, removeClientAccess } from '../firebase/clientAccounts';
 import { ToastContext } from '../lib/ToastContext';
 
 export function ClientAccounts() {
@@ -30,12 +31,13 @@ export function ClientAccounts() {
       <div className="modal-actions"><button className="primary-button" disabled={saving || !clients.length}>{saving ? 'Creating...' : 'Create client login'}</button></div>
     </form>
     <h3>Existing client accounts</h3>
-    {users.filter(u => u.role === 'client').map(u => <AccountAssignment key={u.id + ':' + u.clientId} account={u} clients={clients} />)}
-    {!users.some(u => u.role === 'client') && <p className="description">No client accounts yet.</p>}
+    {users.filter(u => u.role === 'client' && !u.archived).map(u => <AccountAssignment key={u.id + ':' + u.clientId} account={u} clients={clients} />)}
+    {!users.some(u => u.role === 'client' && !u.archived) && <p className="description">No client accounts yet.</p>}
   </section>;
 }
 function AccountAssignment({ account, clients }) {
   const [clientId, setClientId] = useState(account.clientId || '');
+  const [deleting, setDeleting] = useState(false);
   const [saving, setSaving] = useState(false);
   const { showToast } = useContext(ToastContext);
   async function save(event) {
@@ -44,5 +46,23 @@ function AccountAssignment({ account, clients }) {
     catch (err) { showToast(err.message || 'Unable to update access', 'error'); }
     finally { setSaving(false); }
   }
-  return <form className="user-access-row" onSubmit={save}><label>{account.displayName || account.email}<small>{account.email}</small><select value={clientId} onChange={e => setClientId(e.target.value)}><option value="">Unassigned - no organisation access</option>{clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label><button className="secondary-button" disabled={saving || clientId === (account.clientId || '')}>{saving ? 'Saving...' : 'Save access'}</button></form>;
+  async function remove() {
+    if (!window.confirm('Delete portal access for ' + (account.email || account.displayName) + '? They will lose access to their organisation and disappear from this list. Their Firebase login and organisation data will remain.')) return;
+    setDeleting(true);
+    try { await removeClientAccess(account.id); showToast('Client portal access deleted', 'success'); }
+    catch (err) { showToast(err.message || 'Unable to delete client access', 'error'); }
+    finally { setDeleting(false); }
+  }
+  return <form className="user-access-row" onSubmit={save}>
+    <label>{account.displayName || account.email}<small>{account.email}</small>
+      <select aria-label={'Organisation for ' + account.email} value={clientId} disabled={saving || deleting} onChange={e => setClientId(e.target.value)}>
+        <option value="">Unassigned - no organisation access</option>
+        {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+      </select>
+    </label>
+    <div className="user-access-actions">
+      <button className="secondary-button" disabled={saving || deleting || clientId === (account.clientId || '')}>{saving ? 'Saving...' : 'Save access'}</button>
+      <button type="button" className="secondary-button project-delete" disabled={saving || deleting} onClick={remove}><Trash2 size={16} aria-hidden="true" />{deleting ? 'Deleting...' : 'Delete access'}</button>
+    </div>
+  </form>;
 }

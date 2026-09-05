@@ -1,6 +1,6 @@
 import { useContext, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { usePortalData } from "../data/PortalDataProvider";
 import { Shell } from "../components/Shell";
@@ -50,7 +50,7 @@ export function ClientProfile() {
   return (
     <Shell>
       <section className="page">
-        {role === "administrator" && <NavLink className="back-link" to="/clients">Back to clients</NavLink>}
+        {role === "administrator" && <NavLink className="back-link" to="/clients"><ArrowLeft size={16} aria-hidden="true" />Back to clients</NavLink>}
         <div className="client-hero">
           <span
             className="client-avatar large"
@@ -58,7 +58,7 @@ export function ClientProfile() {
           >
             {client.initials}
           </span>
-          <div>
+          <div className="client-hero-details">
             <p className="eyebrow">CLIENT PROFILE</p>
             <h1>{client.name}</h1>
             <p>
